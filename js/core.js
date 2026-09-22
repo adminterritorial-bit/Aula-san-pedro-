@@ -26,6 +26,8 @@
   A.profile = null;
   A.trainingProfile = null;
   A.trainingAdmin = null;
+  A.analytics = null;
+  A.experience = { notifications: [], agenda: [] };
   A.state = { users: [], courses: [], assignments: [], progress: {}, certificates: [], activity: [] };
   A.ui = { tab: 'courses', selectedCourse: null, selectedBlock: {}, examCourse: null, lastExam: null, busy: false };
 
@@ -55,7 +57,16 @@
       layers: '<path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
       brain: '<path d="M9.5 4.5a3 3 0 0 0-5.5 2A3 3 0 0 0 4 12a3 3 0 0 0 2 5.5A3 3 0 0 0 11 20V4a3 3 0 0 0-1.5.5Z"/><path d="M14.5 4.5a3 3 0 0 1 5.5 2 3 3 0 0 1 0 5.5 3 3 0 0 1-2 5.5A3 3 0 0 1 13 20V4a3 3 0 0 1 1.5.5Z"/><path d="M8 9H5M16 9h3M8 15H6M16 15h2"/>',
       shapes: '<circle cx="6.5" cy="6.5" r="3.5"/><rect x="13" y="3" width="7" height="7" rx="1"/><path d="m6 14-4 7h8Z"/><path d="m17 14 4 7h-8Z"/>',
-      ordered: '<path d="M10 6h11M10 12h11M10 18h11"/><path d="M4 6h1v4H4M3 14h3l-3 4h3"/>'
+      ordered: '<path d="M10 6h11M10 12h11M10 18h11"/><path d="M4 6h1v4H4M3 14h3l-3 4h3"/>',
+      bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+      chart: '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
+      send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+      message: '<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/>',
+      lightning: '<path d="m13 2-9 12h7l-1 8 10-13h-7Z"/>',
+      checkcircle: '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
+      menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+      close: '<path d="m6 6 12 12M18 6 6 18"/>'
+
     };
     return '<svg aria-hidden="true" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + (paths[name] || paths.sparkle) + '</svg>';
   };
@@ -124,8 +135,49 @@
   };
   A.refresh = async function () {
     if (!A.logged()) return;
-    var data = await A.rpc('aula_bootstrap');
-    A.hydrate(data);
+    var results = await Promise.all([
+      A.rpc('aula_bootstrap'),
+      A.rpc('aula_experience_bootstrap').catch(function(){ return { notifications:[], agenda:[] }; })
+    ]);
+    A.hydrate(results[0]);
+    A.experience = results[1] || { notifications:[], agenda:[] };
+    A.experience.notifications = A.experience.notifications || [];
+    A.experience.agenda = A.experience.agenda || [];
+  };
+  A.loadAnalytics = async function (force) {
+    if (!A.canManageUsers()) return null;
+    if (A.analytics && !force) return A.analytics;
+    A.analytics = await A.rpc('aula_learning_analytics');
+    return A.analytics;
+  };
+  A.unreadNotifications = function () {
+    return (A.experience.notifications || []).filter(function(n){ return !n.read_at; }).length;
+  };
+  A.globalSearchResults = function (query) {
+    query=String(query||'').trim().toLowerCase();
+    if(!query) return [];
+    var out=[];
+    A.state.courses.forEach(function(c){
+      var text=(c.title+' '+(c.description||'')+' '+(c.category||'')).toLowerCase();
+      if(text.indexOf(query)>=0) out.push({type:'course',title:c.title,subtitle:(c.category||'Capacitación')+' · '+Number(c.estimated_minutes||30)+' min',hash:'#/course/'+encodeURIComponent(c.id),icon:'book'});
+    });
+    (A.state.certificates||[]).filter(function(cert){return cert.user_id===A.currentUid();}).forEach(function(cert){
+      var co=A.course(cert.course_id),title=co?co.title:'Certificado';
+      if((title+' '+(cert.code||'')).toLowerCase().indexOf(query)>=0) out.push({type:'certificate',title:title,subtitle:'Certificado · '+(cert.score||0)+'%',hash:'#/certificate/'+encodeURIComponent(cert.code),icon:'trophy'});
+    });
+    (A.experience.agenda||[]).forEach(function(ev){
+      if(((ev.title||'')+' '+(ev.description||'')).toLowerCase().indexOf(query)>=0) out.push({type:'agenda',title:ev.title,subtitle:'Agenda · '+new Date(ev.starts_at).toLocaleDateString('es-CO'),hash:ev.action_hash||'#/',icon:'calendar'});
+    });
+    var games=[
+      {title:'Memoria de conceptos',hash:'#/games',icon:'brain'},
+      {title:'Clasificación',hash:'#/games',icon:'shapes'},
+      {title:'Ordenar pasos',hash:'#/games',icon:'ordered'},
+      {title:'Búsqueda visual',hash:'#/games',icon:'search'},
+      {title:'Mini RPG',hash:'#/games',icon:'game'},
+      {title:'Cartas de decisión',hash:'#/games',icon:'layers'}
+    ];
+    games.forEach(function(g){if(g.title.toLowerCase().indexOf(query)>=0)out.push({type:'game',title:g.title,subtitle:'Biblioteca de juegos',hash:g.hash,icon:g.icon});});
+    return out.slice(0,12);
   };
   A.loadTrainingProfile = async function (force) {
     if (!A.logged()) return null;
