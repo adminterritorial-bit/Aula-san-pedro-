@@ -219,6 +219,7 @@
   };
 
   A.bindShell = function () {
+    document.documentElement.classList.remove('mobile-sheet-open','course-outline-open');
     document.querySelectorAll('[data-nav-hash]').forEach(function (b) {
       b.onclick = function () { location.hash = b.getAttribute('data-nav-hash'); };
     });
