@@ -353,7 +353,7 @@
       searchResults.querySelectorAll('[data-search-hash]').forEach(function(btn){btn.onclick=function(){searchDrawer.close();location.hash=btn.getAttribute('data-search-hash');};});
     }
     if(searchInput){searchInput.oninput=renderSearch;document.getElementById('globalSearchBtn')&&document.getElementById('globalSearchBtn').addEventListener('click',function(){setTimeout(function(){searchInput.focus();},90);});}
-    document.addEventListener('keydown',function(ev){if((ev.metaKey||ev.ctrlKey)&&ev.key.toLowerCase()==='k'){ev.preventDefault();searchDrawer.open();setTimeout(function(){if(searchInput)searchInput.focus();},80);}if(ev.key==='Escape'){notificationDrawer.close();searchDrawer.close();profileDrawer.close();}});
+    document.onkeydown=function(ev){if((ev.metaKey||ev.ctrlKey)&&ev.key.toLowerCase()==='k'){ev.preventDefault();searchDrawer.open();setTimeout(function(){if(searchInput)searchInput.focus();},80);}if(ev.key==='Escape'){notificationDrawer.close();searchDrawer.close();profileDrawer.close();}};
 
     var refreshBtn=document.getElementById('mobileRefreshBtn');
     if(refreshBtn)refreshBtn.onclick=function(){location.reload();};
