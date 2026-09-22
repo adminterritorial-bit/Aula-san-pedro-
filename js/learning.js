@@ -9,59 +9,127 @@
     return { c:c, a:a, pct:pct, cert:cert, overdue:overdue, state:state };
   }
 
-  function stateLabel(x) {
-    if (x.cert) return '<span class="journey-chip certified">Certificada</span>';
-    if (x.overdue) return '<span class="journey-chip overdue">Vencida</span>';
-    if (x.state === 'exam') return '<span class="journey-chip exam">Lista para examen</span>';
-    if (x.state === 'progress') return '<span class="journey-chip progress">En progreso</span>';
-    return '<span class="journey-chip new">Sin iniciar</span>';
+  function statusLabel(state) {
+    return { certified:'Certificada', exam:'Lista para examen', progress:'En progreso', new:'Sin iniciar' }[state] || 'Sin iniciar';
   }
 
-  function courseCard(item, compact) {
-    var x = journey(item), c = x.c;
-    var letters = String(c.title || 'A').split(/\s+/).slice(0,2).map(function(v){return v[0]||'';}).join('').toUpperCase();
-    return '<article class="' + (compact ? 'home-course-card' : 'catalog-course-card') + '">' +
-      '<div class="course-visual-cover">' + (c.cover_url ? '<img class="course-cover-image" src="' + A.escape(c.cover_url) + '" alt="">' : '<span>' + A.escape(letters) + '</span>') + '<div class="course-cover-glow"></div>' + stateLabel(x) + '</div>' +
-      '<div class="home-course-body"><div class="course-meta-line"><span>' + A.escape(c.category || 'Capacitación institucional') + ' · ' + Number(c.estimated_minutes || 30) + ' min</span><b>' + x.pct + '%</b></div>' +
-      '<h3>' + A.escape(c.title) + '</h3><p>' + A.escape(c.description || 'Ruta de formación institucional.') + '</p>' +
-      '<div class="premium-progress-track"><span style="width:' + x.pct + '%"></span></div>' +
-      '<div class="course-card-footer"><small>' + (x.a.due_at ? 'Vence ' + A.escape(x.a.due_at) : 'Sin vencimiento') + '</small>' +
-      '<div class="course-card-actions"><a class="course-primary-link" href="#/course/' + encodeURIComponent(c.id) + '">' + (x.pct ? 'Continuar' : 'Comenzar') + ' →</a>' +
-      (x.cert ? '<a class="course-cert-link" href="#/certificate/' + encodeURIComponent(x.cert.code) + '">Certificado</a>' : '') + '</div></div></div></article>';
+  function dueLabel(value) {
+    if (!value) return 'Sin vencimiento';
+    try { return 'Vence ' + new Date(value + 'T23:59:59').toLocaleDateString('es-CO'); }
+    catch (_) { return 'Vence ' + value; }
+  }
+
+  function coverFrame(course, compact) {
+    var cls='course-cover-frame ' + (compact ? 'compact ' : '') + (course.cover_url ? 'loaded' : '');
+    return '<div class="' + cls + '">' +
+      (course.cover_url
+        ? '<img src="' + A.escape(course.cover_url) + '" alt="' + A.escape(course.title || 'Portada de capacitación') + '" loading="lazy">'
+        : '<div class="course-cover-placeholder">' + A.icon('book', compact ? 22 : 34) + '</div>') +
+      '<div class="course-cover-shine"></div></div>';
+  }
+
+  function homeCourseCard(item) {
+    var x=journey(item), c=x.c;
+    return '<a class="home-course-card" href="#/course/' + encodeURIComponent(c.id) + '">' +
+      '<div class="home-course-cover ' + (c.cover_url ? 'is-ready' : '') + '">' +
+        (c.cover_url
+          ? '<img src="' + A.escape(c.cover_url) + '" alt="' + A.escape(c.title) + '" loading="lazy">'
+          : '<div class="home-cover-fallback">' + A.icon('book',38) + '</div>') +
+        '<span>' + A.escape(statusLabel(x.state)) + '</span>' +
+      '</div>' +
+      '<div class="home-course-body">' +
+        '<h3>' + A.escape(c.title) + '</h3>' +
+        '<p>' + A.escape(c.description || 'Capacitación institucional.') + '</p>' +
+        '<footer><span>' + A.escape(c.category || 'General') + ' · ' + Number(c.estimated_minutes || 30) + ' min</span><span>' + dueLabel(x.a.due_at) + '</span></footer>' +
+      '</div>' +
+      '<span class="home-course-cta">' + A.icon('play',16) + (x.state==='exam' ? ' Ir al examen' : x.pct ? ' Continuar' : ' Abrir') + '</span>' +
+    '</a>';
+  }
+
+  function catalogCourseCard(item, index) {
+    var x=journey(item), c=x.c;
+    var icon=x.state==='certified'?'trophy':x.state==='exam'?'graduation':x.state==='progress'?'play':'book';
+    var action=x.state==='certified'?'Repasar':x.state==='exam'?'Presentar examen':x.state==='progress'?'Continuar':'Comenzar';
+    var flat=A.flatten(c), required=flat.filter(function(v){return v.block.required;}), done=A.progress(A.currentUid(),c.id);
+    var completedCount=required.filter(function(v){return done.indexOf(v.block.id)>=0;}).length;
+    return '<article class="catalog-course-card journey-' + x.state + (x.overdue?' overdue':'') + '" style="--delay:' + Math.min(index,12)*45 + 'ms">' +
+      '<a class="catalog-card-link-overlay" href="#/course/' + encodeURIComponent(c.id) + '" aria-label="' + A.escape(action + ' ' + c.title) + '"></a>' +
+      '<div class="catalog-card-visual">' +
+        coverFrame(c,false) +
+        '<div class="catalog-card-image-overlay"></div>' +
+        '<span class="catalog-card-icon">' + A.icon(icon,22) + '</span>' +
+        '<span class="catalog-card-progress-pill">' + x.pct + '%</span>' +
+        '<span class="catalog-card-hover-action">' + A.icon('play',19) + ' ' + action + '</span>' +
+      '</div>' +
+      '<div class="catalog-card-body">' +
+        '<div class="catalog-card-status-row"><span class="catalog-status-badge ' + x.state + '">' + A.icon(icon,13) + ' ' + statusLabel(x.state) + '</span>' +
+        (x.overdue?'<span class="catalog-overdue-badge">Fecha vencida</span>':'') + '</div>' +
+        '<h3>' + A.escape(c.title) + '</h3>' +
+        '<p>' + A.escape(c.description || 'Capacitación institucional.') + '</p>' +
+        '<div class="catalog-card-progress"><div><span style="width:' + x.pct + '%"></span></div><small>' + completedCount + ' de ' + required.length + ' contenidos obligatorios</small></div>' +
+        '<div class="catalog-card-facts"><span>' + A.icon('calendar',14) + ' ' + dueLabel(x.a.due_at) + '</span><span>' + A.icon('filecheck',14) + ' Aprobación ' + Number(c.passing_score || 80) + '%</span></div>' +
+      '</div>' +
+      '<footer class="catalog-card-footer">' +
+        (x.cert?'<a class="catalog-certificate-button" href="#/certificate/' + encodeURIComponent(x.cert.code) + '">' + A.icon('badge',16) + ' Certificado</a>':'') +
+        '<a class="catalog-open-button" href="#/course/' + encodeURIComponent(c.id) + '">' + action + ' ' + A.icon('arrow',16) + '</a>' +
+      '</footer>' +
+    '</article>';
+  }
+
+  function resumeLearningCard(item) {
+    var x=journey(item), c=x.c;
+    return '<section class="catalog-resume-card">' +
+      '<div class="catalog-resume-cover">' + coverFrame(c,true) + '<span class="catalog-resume-play">' + A.icon(x.state==='exam'?'graduation':'play',20) + '</span></div>' +
+      '<div class="catalog-resume-copy"><span>' + (x.state==='exam'?'Ya puedes cerrar esta ruta':'Continúa donde quedaste') + '</span><h2>' + A.escape(c.title) + '</h2><div class="catalog-resume-progress"><div><span style="width:' + x.pct + '%"></span></div><strong>' + x.pct + '%</strong></div></div>' +
+      '<div class="catalog-resume-meta"><span>' + A.icon('clock',14) + ' ' + dueLabel(x.a.due_at) + '</span><a href="#/course/' + encodeURIComponent(c.id) + '">' + (x.state==='exam'?'Ir al examen':'Continuar') + ' ' + A.icon('arrow',17) + '</a></div>' +
+    '</section>';
   }
 
   function routeCard(tp) {
-    if (!tp || !tp.position) {
-      return '<section class="home-training-route-card route-pending"><div class="home-training-route-icon">◎</div><div class="home-training-route-content"><span class="eyebrow">Ruta formativa</span><h3>Tu cargo todavía no tiene una ruta asociada</h3><p>Cuando Gestión Aula defina tu cargo, competencias y rutas obligatorias aparecerán aquí automáticamente.</p></div></section>';
-    }
-    var comps = tp.competencies || [], paths = tp.paths || [];
-    return '<section class="home-training-route-card"><div class="home-training-route-head"><div class="home-training-route-icon">◎</div><div><span class="eyebrow">Perfil de formación</span><h3>' + A.escape(tp.position.name) + '</h3><p>' + A.escape(tp.position.department || 'Administración Municipal') + '</p></div></div>' +
-      '<div class="home-training-route-content"><div><strong>Competencias requeridas</strong><div class="home-training-chip-list">' +
-      (comps.length ? comps.map(function(x){return '<span>' + A.escape(x.name) + ' · N' + x.required_level + '</span>';}).join('') : '<span>Sin competencias configuradas</span>') +
-      '</div></div><div><strong>Rutas asignadas</strong><div class="home-training-path-list">' +
-      (paths.length ? paths.map(function(x){return '<span>↗ ' + A.escape(x.name) + '</span>';}).join('') : '<span>Sin rutas configuradas</span>') +
+    if (!tp || !tp.position) return '';
+    var comps=tp.competencies||[], paths=tp.paths||[];
+    return '<section class="home-training-route-card">' +
+      '<div class="home-training-route-head"><span class="home-training-route-icon">' + A.icon('briefcase',22) + '</span><div><span>MI RUTA FORMATIVA</span><h2>' + A.escape(tp.position.name) + '</h2><p>' + A.escape(tp.position.department || 'Ruta de formación asociada a tu cargo actual.') + '</p></div></div>' +
+      '<div class="home-training-route-content"><div><strong>' + A.icon('target',16) + ' Competencias esperadas</strong><div class="home-training-chip-list">' +
+        (comps.length?comps.slice(0,6).map(function(x){return '<span>' + A.escape(x.name) + '<b>N' + Number(x.required_level||1) + '</b></span>';}).join(''):'<small>Aún no hay competencias configuradas para este cargo.</small>') +
+      '</div></div><div><strong>' + A.icon('layers',16) + ' Rutas asignadas</strong><div class="home-training-path-list">' +
+        (paths.length?paths.map(function(x){return '<span>' + A.icon('layers',14) + ' ' + A.escape(x.name) + '</span>';}).join(''):'<small>Aún no hay rutas vinculadas a este cargo.</small>') +
       '</div></div></div></section>';
   }
 
   A.dashboard = function () {
     var uid=A.currentUid(), items=A.assigned(uid), certs=A.state.certificates.filter(function(c){return c.user_id===uid;});
-    var avg=items.length ? Math.round(items.reduce(function(s,x){return s+A.percent(uid,x.course);},0)/items.length) : 0;
-    var inProgress=items.filter(function(x){var j=journey(x);return j.state==='progress'||j.state==='exam';}).length;
-    var firstName=String((A.profile&&A.profile.full_name)||'Usuario').trim().split(/\s+/)[0];
+    var firstName=String((A.profile&&A.profile.full_name)||'Colaborador').trim().split(/\s+/)[0]||'Colaborador';
     var tp=A.trainingProfile;
+    var visible=items.slice(0,6);
 
-    var html='<div class="learner-home-page">' +
-      '<section class="home-original-hero"><div class="home-hero-motion"></div><div class="home-hero-copy"><span class="home-hero-pill">Aula institucional · acceso seguro</span>' +
-      '<h1>Hola, ' + A.escape(firstName) + '.<br><span>Tu aprendizaje continúa aquí.</span></h1><p>Capacitaciones, rutas, evidencias, evaluaciones y certificados en una sola experiencia.</p>' +
-      '<div class="home-hero-actions"><a class="home-yellow-button" href="#/catalog">Ver mis capacitaciones</a>' + (A.canManage()?'<a class="home-glass-button" href="#/studio">Abrir Gestión Aula</a>':'') + '</div></div>' +
-      '<div class="home-hero-metric"><div class="hero-progress-ring" style="--progress:' + avg + '"><div><strong>' + avg + '%</strong><span>progreso promedio</span></div></div><small>' + inProgress + ' rutas en curso · ' + certs.length + ' certificados</small></div></section>' +
-      '<section class="home-metric-grid"><article><span>Capacitaciones</span><strong>' + items.length + '</strong><small>asignadas a tu perfil</small></article><article><span>En progreso</span><strong>' + inProgress + '</strong><small>incluye listas para examen</small></article><article><span>Certificados</span><strong>' + certs.length + '</strong><small>evidencias emitidas</small></article><article><span>Juegos</span><strong>6</strong><small>formatos interactivos</small></article></section>' +
+    var html='<main class="learner-home-page">' +
+      '<section class="home-original-hero">' +
+        '<div class="home-hero-motion" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
+        '<div><span class="home-hero-pill">' + A.icon('sparkle',15) + ' Plataforma conectada</span>' +
+          '<h1>Aprende, participa y certifícate.</h1>' +
+          '<p>' + A.escape(firstName) + ', completa contenidos, recursos, actividades y juegos antes de presentar la evaluación final de cada ruta.</p>' +
+          '<div class="home-hero-actions"><a class="home-yellow-button" href="#/catalog">Ver mis capacitaciones</a>' +
+          (A.canManage()?'<a class="home-glass-button" href="#/studio">' + A.icon('shield',18) + ' Gestión Aula</a>':'') + '</div>' +
+        '</div>' +
+        '<div class="home-hero-metric"><strong>' + certs.length + '</strong><span>Certificados obtenidos</span></div>' +
+      '</section>' +
+
+      '<section class="home-metric-grid">' +
+        '<article>' + A.icon('book',24) + '<div><span>Asignadas visibles</span><strong>' + items.length + '</strong></div></article>' +
+        '<article>' + A.icon('graduation',24) + '<div><span>Certificadas</span><strong>' + certs.length + '</strong></div></article>' +
+        '<article>' + A.icon('game',24) + '<div><span>Juegos disponibles</span><strong>6+</strong></div></article>' +
+        '<article>' + A.icon('badge',24) + '<div><span>Nota mínima</span><strong>80%</strong></div></article>' +
+      '</section>' +
+
       routeCard(tp) +
-      '<section class="home-section-heading"><div><span class="eyebrow">Continuar aprendizaje</span><h2>Tus capacitaciones</h2><p>Retoma exactamente donde quedaste.</p></div><a href="#/catalog">Ver todas →</a></section>' +
-      (items.length?'<div class="home-course-grid">'+items.slice(0,3).map(function(x){return courseCard(x,true);}).join('')+'</div>':'<section class="home-empty"><h3>No tienes capacitaciones asignadas</h3><p>Las rutas obligatorias aparecerán cuando Gestión Aula las vincule a tu cargo.</p></section>') +
-      '<section class="home-section-heading section-spacing-top"><div><span class="eyebrow">Evidencia</span><h2>Certificados recientes</h2><p>Resultados verificables de tu formación.</p></div></section>' +
-      (certs.length?'<div class="home-certificate-list">'+certs.slice().sort(function(a,b){return new Date(b.issued_at)-new Date(a.issued_at);}).slice(0,4).map(function(c){var course=A.course(c.course_id);return '<a href="#/certificate/'+encodeURIComponent(c.code)+'"><span class="cert-medal">✓</span><div><strong>'+A.escape(course?course.title:'Capacitación')+'</strong><small>'+new Date(c.issued_at).toLocaleDateString('es-CO')+' · '+c.score+'%</small></div><b>Ver →</b></a>';}).join('')+'</div>':'<div class="home-empty compact"><p>Aún no tienes certificados emitidos.</p></div>') +
-      '</div>';
+
+      '<section class="home-section-heading"><div><span>CONTINUAR APRENDIZAJE</span><h2>Capacitaciones asignadas</h2><p>Abre cualquier capacitación sin perder la navegación principal.</p></div><a href="#/catalog">Ver todas</a></section>' +
+      (visible.length?'<div class="home-course-grid">' + visible.map(homeCourseCard).join('') + '</div>':'<div class="home-empty">' + A.icon('book',30) + '<h3>Aún no tienes capacitaciones visibles</h3><p>Cuando te asignen una capacitación publicada aparecerá aquí.</p></div>') +
+
+      '<section class="home-section-heading section-spacing-top"><div><span>CERTIFICACIÓN</span><h2>Mis certificados</h2><p>Consulta las evidencias que ya has obtenido.</p></div></section>' +
+      (certs.length?'<div class="home-certificate-list">' + certs.slice(0,6).map(function(item){var co=A.course(item.course_id);return '<article><div><b>' + A.escape(co?co.title:'Capacitación institucional') + '</b><span>Código: ' + A.escape(item.code) + '</span><small>' + new Date(item.issued_at).toLocaleDateString('es-CO') + ' · ' + item.score + '%</small></div><a href="#/certificate/' + encodeURIComponent(item.code) + '">' + A.icon('trophy',16) + ' Abrir certificado</a></article>';}).join('') + '</div>':'<div class="home-empty compact">' + A.icon('trophy',28) + '<h3>Aún no tienes certificados</h3><p>Aprueba una capacitación con la nota mínima para generarlo automáticamente.</p></div>') +
+    '</main>';
 
     document.getElementById('root').innerHTML=A.shell(html); A.bindShell();
     if (!A.trainingProfile && !A.ui.trainingProfileLoading) {
@@ -73,28 +141,54 @@
   A.catalog = function () {
     var items=A.assigned(A.currentUid()).map(journey);
     A.ui.catalogFilter=A.ui.catalogFilter||'all'; A.ui.catalogSearch=A.ui.catalogSearch||''; A.ui.catalogSort=A.ui.catalogSort||'recent';
-    var q=A.ui.catalogSearch.toLowerCase();
+    var q=A.ui.catalogSearch.trim().toLowerCase();
     var filtered=items.filter(function(x){
-      var ok=A.ui.catalogFilter==='all'||x.state===A.ui.catalogFilter||(A.ui.catalogFilter==='overdue'&&x.overdue);
-      return ok && (!q || (x.c.title+' '+x.c.description).toLowerCase().indexOf(q)>=0);
+      var ok=A.ui.catalogFilter==='all'||x.state===A.ui.catalogFilter;
+      return ok&&(!q||(x.c.title+' '+x.c.description+' '+(x.c.category||'')).toLowerCase().indexOf(q)>=0);
     });
     if(A.ui.catalogSort==='progress') filtered.sort(function(a,b){return b.pct-a.pct;});
     if(A.ui.catalogSort==='title') filtered.sort(function(a,b){return a.c.title.localeCompare(b.c.title,'es');});
     if(A.ui.catalogSort==='due') filtered.sort(function(a,b){return String(a.a.due_at||'9999').localeCompare(String(b.a.due_at||'9999'));});
 
-    var counts={all:items.length,new:0,progress:0,exam:0,certified:0,overdue:0};
-    items.forEach(function(x){counts[x.state]=(counts[x.state]||0)+1;if(x.overdue)counts.overdue++;});
-    var filters=[['all','Todas'],['new','Sin iniciar'],['progress','En progreso'],['exam','Listas para examen'],['certified','Certificadas'],['overdue','Vencidas']];
+    var counts={all:items.length,new:0,progress:0,exam:0,certified:0};
+    items.forEach(function(x){counts[x.state]=(counts[x.state]||0)+1;});
+    var filters=[['all','Todas'],['new','Sin iniciar'],['progress','En progreso'],['exam','Listas para examen'],['certified','Certificadas']];
+    var resume=items.filter(function(x){return x.state==='progress'||x.state==='exam';}).sort(function(a,b){return b.pct-a.pct;})[0]||null;
+    var firstName=String((A.profile&&A.profile.full_name)||'Colaborador').trim().split(/\s+/)[0]||'Colaborador';
 
-    var html='<div class="catalog-original-page"><section class="catalog-hero"><div><span class="eyebrow-light">Ruta personal</span><h1>Mis capacitaciones</h1><p>Busca, filtra y continúa tus rutas de aprendizaje según tu perfil y obligaciones.</p></div><div class="catalog-summary-orb"><strong>'+items.length+'</strong><span>rutas visibles</span></div></section>' +
-      '<section class="catalog-toolbar"><div class="catalog-search"><span>⌕</span><input id="catalogSearch" placeholder="Buscar capacitación…" value="'+A.escape(A.ui.catalogSearch)+'"></div><select id="catalogSort"><option value="recent">Más recientes</option><option value="due">Fecha límite</option><option value="progress">Mayor progreso</option><option value="title">A–Z</option></select></section>' +
-      '<div class="catalog-filters">'+filters.map(function(f){return '<button data-filter="'+f[0]+'" class="'+(A.ui.catalogFilter===f[0]?'active':'')+'">'+f[1]+' <span>'+counts[f[0]]+'</span></button>';}).join('')+'</div>' +
-      (filtered.length?'<div class="catalog-course-grid">'+filtered.map(function(x){return courseCard(x,false);}).join('')+'</div>':'<section class="catalog-empty"><h3>No hay resultados</h3><p>Cambia los filtros o la búsqueda.</p></section>')+'</div>';
+    var html='<main class="learner-course-app learner-catalog-app catalog-original-page">' +
+      '<section class="catalog-original-hero">' +
+        '<div class="catalog-original-hero-motion" aria-hidden="true"><span class="original-hero-orb orb-large"></span><span class="original-hero-orb orb-small"></span><span class="original-hero-spark spark-one"></span><span class="original-hero-spark spark-two"></span><span class="original-hero-dot dot-one"></span><span class="original-hero-dot dot-two"></span><span class="original-hero-dot dot-three"></span></div>' +
+        '<div class="catalog-original-copy"><span class="catalog-original-pill">' + A.icon('sparkle',15) + ' Plataforma conectada</span><h1>Aprende, participa y certifícate.</h1><p>' + A.escape(firstName) + ', completa tus contenidos, recursos y actividades dentro de una misma ruta antes de presentar el examen final.</p>' +
+          '<div class="catalog-original-actions">' +
+            (resume?'<a class="catalog-original-yellow" href="#/course/' + encodeURIComponent(resume.c.id) + '">' + A.icon('play',18) + ' Continuar capacitación</a>':'<a class="catalog-original-yellow" href="#catalogWorkspace">' + A.icon('book',18) + ' Ver mis capacitaciones</a>') +
+            '<a class="catalog-original-glass" href="#/games">' + A.icon('game',18) + ' Juegos</a>' +
+          '</div></div>' +
+        '<div class="catalog-original-hero-metric"><strong>' + counts.certified + '</strong><span>Certificados obtenidos</span></div>' +
+      '</section>' +
+
+      '<section class="catalog-original-metrics" aria-label="Resumen de capacitaciones">' +
+        '<article>' + A.icon('book',24) + '<div><span>Asignadas visibles</span><strong>' + counts.all + '</strong></div></article>' +
+        '<article>' + A.icon('play',24) + '<div><span>En progreso</span><strong>' + counts.progress + '</strong></div></article>' +
+        '<article>' + A.icon('graduation',24) + '<div><span>Listas para examen</span><strong>' + counts.exam + '</strong></div></article>' +
+        '<article>' + A.icon('trophy',24) + '<div><span>Certificadas</span><strong>' + counts.certified + '</strong></div></article>' +
+      '</section>' +
+
+      (resume?resumeLearningCard(resume):'') +
+
+      '<section class="catalog-workspace" id="catalogWorkspace">' +
+        '<header class="catalog-workspace-header catalog-original-heading"><div><span>CONTINUAR APRENDIZAJE</span><h2>Mis capacitaciones</h2><p>Busca, filtra y continúa tu ruta con el mismo lenguaje visual de Aula San Pedro.</p></div><div class="catalog-result-count"><strong>' + filtered.length + '</strong><span>' + (filtered.length===1?'capacitación':'capacitaciones') + '</span></div></header>' +
+        '<div class="catalog-toolbar"><label class="catalog-search">' + A.icon('search',18) + '<input id="catalogSearch" value="' + A.escape(A.ui.catalogSearch) + '" placeholder="Buscar capacitación…"></label><label class="catalog-sort">' + A.icon('sliders',17) + '<select id="catalogSort"><option value="recent">Más recientes</option><option value="due">Fecha límite</option><option value="progress">Mayor progreso</option><option value="title">A–Z</option></select></label></div>' +
+        '<div class="catalog-filter-row" aria-label="Filtros de capacitaciones">' + A.icon('filter',16) + filters.map(function(f){return '<button data-filter="' + f[0] + '" class="' + (A.ui.catalogFilter===f[0]?'active':'') + '"><span>' + f[1] + '</span><strong>' + counts[f[0]] + '</strong></button>';}).join('') + '</div>' +
+        (filtered.length?'<div class="catalog-course-grid">' + filtered.map(catalogCourseCard).join('') + '</div>':'<div class="catalog-empty">' + A.icon('search',30) + '<h3>No encontramos capacitaciones con esos filtros</h3><p>Prueba otra búsqueda o vuelve a mostrar todas tus capacitaciones.</p><button id="clearCatalogFilters">Ver todas</button></div>') +
+      '</section>' +
+    '</main>';
 
     document.getElementById('root').innerHTML=A.shell(html); A.bindShell();
-    var search=document.getElementById('catalogSearch'); if(search) search.oninput=function(){A.ui.catalogSearch=search.value;A.catalog();};
+    var search=document.getElementById('catalogSearch'); if(search)search.oninput=function(){A.ui.catalogSearch=search.value;A.catalog();};
     var sort=document.getElementById('catalogSort'); if(sort){sort.value=A.ui.catalogSort;sort.onchange=function(){A.ui.catalogSort=sort.value;A.catalog();};}
     document.querySelectorAll('[data-filter]').forEach(function(b){b.onclick=function(){A.ui.catalogFilter=b.getAttribute('data-filter');A.catalog();};});
+    var clear=document.getElementById('clearCatalogFilters'); if(clear)clear.onclick=function(){A.ui.catalogSearch='';A.ui.catalogFilter='all';A.catalog();};
   };
 
   function blockBody(entry) {
