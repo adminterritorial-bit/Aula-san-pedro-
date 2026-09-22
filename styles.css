@@ -7330,3 +7330,22 @@ button,a{touch-action:manipulation}
   .studio-executive-hero{padding:24px!important;align-items:flex-start!important;flex-direction:column!important}.admin-role{align-items:flex-start!important;text-align:left!important;min-width:0!important;width:100%!important}
   .integrated-tab-bar{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important}.integrated-tab-bar button{justify-content:flex-start!important}
 }
+
+
+/* === FINAL COVERAGE POLISH === */
+.assignment-list{display:grid!important;gap:9px!important}
+.assignment-card{
+  min-height:72px!important;padding:12px 13px!important;border:1px solid #dfe8f1!important;border-radius:15px!important;
+  background:linear-gradient(145deg,#fff,#fbfdff)!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  gap:12px!important;align-items:center!important;box-shadow:0 8px 22px rgba(19,52,86,.04)!important;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease!important
+}
+.assignment-card:hover{transform:translateY(-2px)!important;border-color:#c6d9ea!important;box-shadow:0 14px 30px rgba(15,52,91,.075)!important}
+.assignment-card>div{display:flex!important;flex-direction:column!important;gap:3px!important}.assignment-card b{font-size:.68rem!important;color:#284b6d!important}.assignment-card span{font-size:.58rem!important;color:#6e8397!important}.assignment-card small{font-size:.52rem!important;color:#91a0ae!important}
+.user-detail-panel{background:
+  radial-gradient(circle at 95% 0%,rgba(255,210,28,.09),transparent 25%),
+  linear-gradient(145deg,#fff,#f8fbfe)!important}
+.user-detail-panel .assignment-card{background:#fff!important}
+.assignment-user-check,.member-check{accent-color:#0b5eb8!important;cursor:pointer!important}
+.role-change,.person-position{min-height:38px!important;border:1px solid #d6e2ed!important;border-radius:10px!important;background:#fff!important;color:#385875!important;padding:0 9px!important}
+@media(max-width:640px){.assignment-card{grid-template-columns:1fr!important}.assignment-card>button{justify-self:start!important}}
