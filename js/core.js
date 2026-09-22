@@ -202,14 +202,45 @@
   };
 
   A.loginView = function (notice) {
-    document.getElementById('root').innerHTML = '<main class="auth-page"><section class="auth-hero"><div class="demo-brand-mark">A</div><span class="eyebrow-light">Aula institucional · San Pedro</span><h1>Ingresa con tu cuenta institucional de Google.</h1><p>El acceso principal utiliza Google Workspace de la Alcaldía. El Aula conserva cursos, progreso, evaluaciones y certificados en Supabase.</p><div class="auth-feature-grid"><div><strong>Cuenta institucional</strong><span>Acceso exclusivo para @' + A.INSTITUTIONAL_DOMAIN + '.</span></div><div><strong>Inicio rápido</strong><span>Sin crear otra contraseña si ya tienes tu cuenta de Google institucional.</span></div></div></section>' +
-      '<section class="auth-panel"><div class="auth-form"><div><span class="eyebrow">Acceso institucional</span><h2>Iniciar sesión</h2><p>Usa tu cuenta Google de la Alcaldía de San Pedro.</p></div>' +
-      '<div class="institutional-domain-pill">@' + A.INSTITUTIONAL_DOMAIN + '</div>' +
-      '<div id="googleButtonHost" style="min-height:44px"></div>' +
-      '<p id="googleLoginMessage" class="warning-message" style="display:' + (notice ? 'block' : 'none') + '">' + A.escape(notice || '') + '</p>' +
-      '<div class="auth-divider"><span>o acceso alterno</span></div>' +
-      '<details class="alternate-login"><summary>Ingresar con correo y contraseña</summary><form id="loginForm" class="alternate-login-form"><label>Correo institucional<input id="loginEmail" type="email" autocomplete="username" placeholder="usuario@' + A.INSTITUTIONAL_DOMAIN + '" required></label><label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label><button class="secondary-button" id="loginBtn">Ingresar con contraseña</button><p id="loginMessage" class="warning-message" style="display:none"></p></form></details>' +
-      '<small class="demo-muted">El acceso externo al dominio institucional está bloqueado también en la base de datos.</small></div></section></main>';
+    document.getElementById('root').innerHTML =
+      '<main class="auth-page auth-page-premium">' +
+        '<section class="auth-hero auth-hero-premium">' +
+          '<div class="auth-ambient auth-ambient-one"></div><div class="auth-ambient auth-ambient-two"></div>' +
+          '<div class="auth-hero-top"><div class="auth-premium-brand"><span class="auth-brand-symbol">A<i></i></span><div><strong>Aula San Pedro</strong><small>FORMACIÓN INSTITUCIONAL</small></div></div><span class="auth-live-pill">' + A.icon('sparkle',15) + ' Plataforma institucional</span></div>' +
+          '<div class="auth-hero-content">' +
+            '<span class="eyebrow-light">' + A.icon('graduation',16) + ' LMS institucional inteligente</span>' +
+            '<h1>Aprende, participa y <em>certifícate.</em></h1>' +
+            '<p>Una experiencia de formación diseñada para que cada funcionario encuentre su ruta, avance a su ritmo y mantenga evidencias verificables de su aprendizaje.</p>' +
+            '<div class="auth-feature-grid auth-feature-grid-premium">' +
+              '<article><span>' + A.icon('layers',22) + '</span><div><strong>Rutas personalizadas</strong><small>Capacitaciones, competencias y obligaciones según cargo.</small></div></article>' +
+              '<article><span>' + A.icon('game',22) + '</span><div><strong>Aprendizaje interactivo</strong><small>Videos, recursos, prácticas, juegos y evaluaciones.</small></div></article>' +
+              '<article><span>' + A.icon('badge',22) + '</span><div><strong>Certificación verificable</strong><small>Progreso, resultados y certificados dentro de una misma ruta.</small></div></article>' +
+              '<article><span>' + A.icon('shield',22) + '</span><div><strong>Acceso institucional</strong><small>Google Workspace, Supabase y permisos por rol.</small></div></article>' +
+            '</div>' +
+          '</div>' +
+          '<div class="auth-product-preview" aria-hidden="true">' +
+            '<div class="auth-preview-sidebar"><span>A</span><i></i><i></i><i></i></div>' +
+            '<div class="auth-preview-main"><div class="auth-preview-top"></div><div class="auth-preview-hero"><i></i><i></i><strong>Tu aprendizaje continúa aquí.</strong></div><div class="auth-preview-cards"><i></i><i></i><i></i></div></div>' +
+          '</div>' +
+          '<div class="auth-hero-footer"><span>' + A.icon('shield',14) + ' Acceso protegido</span><span>' + A.icon('target',14) + ' Formación por competencias</span><span>' + A.icon('trophy',14) + ' Trazabilidad de logros</span></div>' +
+        '</section>' +
+
+        '<section class="auth-panel auth-panel-premium">' +
+          '<div class="auth-panel-inner">' +
+            '<div class="auth-panel-badge"><span>A</span></div>' +
+            '<div class="auth-panel-heading"><span class="eyebrow">Acceso a la plataforma</span><h2>Bienvenido.</h2><p>Continúa con tu cuenta institucional de la Alcaldía de San Pedro.</p></div>' +
+            '<div class="institutional-domain-pill">' + A.icon('shield',15) + ' @' + A.INSTITUTIONAL_DOMAIN + '</div>' +
+            '<div class="google-login-shell"><div id="googleButtonHost" class="google-button-host"></div></div>' +
+            '<p id="googleLoginMessage" class="warning-message" style="display:' + (notice ? 'block' : 'none') + '">' + A.escape(notice || '') + '</p>' +
+            '<div class="auth-divider"><span>Acceso alterno</span></div>' +
+            '<details class="alternate-login alternate-login-premium"><summary><span>' + A.icon('book',16) + ' Ingresar con correo y contraseña</span><b>+</b></summary>' +
+              '<form id="loginForm" class="alternate-login-form"><label>Correo institucional<input id="loginEmail" type="email" autocomplete="username" placeholder="usuario@' + A.INSTITUTIONAL_DOMAIN + '" required></label><label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label><button class="secondary-button login-secondary-button" id="loginBtn">Ingresar con contraseña</button><p id="loginMessage" class="warning-message" style="display:none"></p></form>' +
+            '</details>' +
+            '<div class="auth-security-note">' + A.icon('shield',17) + '<div><strong>Solo cuentas autorizadas</strong><span>El dominio institucional también se valida en Supabase.</span></div></div>' +
+            '<small class="auth-panel-footer">Aula San Pedro · Formación institucional segura</small>' +
+          '</div>' +
+        '</section>' +
+      '</main>';
 
     var googleMessage = document.getElementById('googleLoginMessage');
     var googleHost = document.getElementById('googleButtonHost');
