@@ -2,6 +2,7 @@
   var A = w.AulaDemo = w.AulaDemo || {};
   A.sb = w.AulaSupabase;
   A.INSTITUTIONAL_DOMAIN = 'sanpedro-valle.gov.co';
+  A.GOOGLE_CLIENT_ID = '103022555921-i7cqb3o8tc4lbtf7n9endse1d423ck4m.apps.googleusercontent.com';
   A.oauthRedirect = function () { return location.origin + location.pathname; };
   A.isInstitutionalEmail = function (email) {
     email = String(email || '').trim().toLowerCase();
@@ -112,50 +113,81 @@
     document.getElementById('root').innerHTML = '<main class="auth-page"><section class="auth-hero"><div class="demo-brand-mark">A</div><span class="eyebrow-light">Aula institucional · San Pedro</span><h1>Ingresa con tu cuenta institucional de Google.</h1><p>El acceso principal utiliza Google Workspace de la Alcaldía. El Aula conserva cursos, progreso, evaluaciones y certificados en Supabase.</p><div class="auth-feature-grid"><div><strong>Cuenta institucional</strong><span>Acceso exclusivo para @' + A.INSTITUTIONAL_DOMAIN + '.</span></div><div><strong>Inicio rápido</strong><span>Sin crear otra contraseña si ya tienes tu cuenta de Google institucional.</span></div></div></section>' +
       '<section class="auth-panel"><div class="auth-form"><div><span class="eyebrow">Acceso institucional</span><h2>Iniciar sesión</h2><p>Usa tu cuenta Google de la Alcaldía de San Pedro.</p></div>' +
       '<div class="institutional-domain-pill">@' + A.INSTITUTIONAL_DOMAIN + '</div>' +
-      '<button type="button" class="google-login-button" id="googleLoginBtn"><span class="google-g-mark">G</span><span>Continuar con Google</span></button>' +
+      '<div id="googleButtonHost" style="min-height:44px"></div>' +
       '<p id="googleLoginMessage" class="warning-message" style="display:' + (notice ? 'block' : 'none') + '">' + A.escape(notice || '') + '</p>' +
       '<div class="auth-divider"><span>o acceso alterno</span></div>' +
       '<details class="alternate-login"><summary>Ingresar con correo y contraseña</summary><form id="loginForm" class="alternate-login-form"><label>Correo institucional<input id="loginEmail" type="email" autocomplete="username" placeholder="usuario@' + A.INSTITUTIONAL_DOMAIN + '" required></label><label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label><button class="secondary-button" id="loginBtn">Ingresar con contraseña</button><p id="loginMessage" class="warning-message" style="display:none"></p></form></details>' +
       '<small class="demo-muted">El acceso externo al dominio institucional está bloqueado también en la base de datos.</small></div></section></main>';
 
-    var googleBtn = document.getElementById('googleLoginBtn');
     var googleMessage = document.getElementById('googleLoginMessage');
+    var googleHost = document.getElementById('googleButtonHost');
 
-    A.checkGoogleProvider().then(function (enabled) {
+    var renderGoogleButton = async function () {
+      var enabled = await A.checkGoogleProvider();
       if (enabled === false) {
-        googleBtn.disabled = true;
-        googleBtn.classList.add('provider-disabled');
-        googleBtn.querySelector('span:last-child').textContent = 'Google pendiente de habilitar en Supabase';
         googleMessage.style.display = 'block';
-        googleMessage.textContent = 'El proveedor Google está deshabilitado en Supabase Auth. El Aula ya está preparada; falta activarlo en Authentication → Sign In / Providers.';
+        googleMessage.textContent = 'El proveedor Google está deshabilitado en Supabase Auth.';
+        return;
       }
-    });
 
-    googleBtn.onclick = async function () {
-      var m = googleMessage;
-      m.style.display = 'none';
-      googleBtn.disabled = true;
-      googleBtn.classList.add('loading');
-      googleBtn.querySelector('span:last-child').textContent = 'Conectando con Google…';
-      try {
-        var enabled = await A.checkGoogleProvider();
-        if (enabled === false) throw new Error('Google todavía está deshabilitado en Supabase Auth.');
-        var result = await A.sb.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: A.oauthRedirect(),
-            queryParams: { hd: A.INSTITUTIONAL_DOMAIN, prompt: 'select_account' }
+      var attempts = 0;
+      var waitForGoogle = function () {
+        if (w.google && w.google.accounts && w.google.accounts.id) {
+          try {
+            w.google.accounts.id.initialize({
+              client_id: A.GOOGLE_CLIENT_ID,
+              hd: A.INSTITUTIONAL_DOMAIN,
+              ux_mode: 'popup',
+              auto_select: false,
+              callback: async function (response) {
+                googleMessage.style.display = 'none';
+                try {
+                  if (!response || !response.credential) throw new Error('Google no devolvió una credencial válida.');
+                  var result = await A.sb.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: response.credential
+                  });
+                  if (result.error) throw result.error;
+                  var email = result.data && result.data.user ? result.data.user.email : '';
+                  if (!A.isInstitutionalEmail(email)) {
+                    await A.sb.auth.signOut({ scope: 'local' });
+                    throw new Error('Debes usar una cuenta institucional @' + A.INSTITUTIONAL_DOMAIN + '.');
+                  }
+                  A.session = result.data.session;
+                  await A.refresh();
+                  location.hash = '#/';
+                  w.AulaRender();
+                } catch (err) {
+                  googleMessage.style.display = 'block';
+                  googleMessage.textContent = A.errorText(err, 'No fue posible iniciar sesión con Google.');
+                }
+              }
+            });
+            googleHost.innerHTML = '';
+            w.google.accounts.id.renderButton(googleHost, {
+              type: 'standard',
+              theme: 'outline',
+              size: 'large',
+              text: 'continue_with',
+              shape: 'rectangular',
+              logo_alignment: 'left',
+              width: Math.min(360, Math.max(260, googleHost.clientWidth || 320))
+            });
+          } catch (err) {
+            googleMessage.style.display = 'block';
+            googleMessage.textContent = A.errorText(err, 'No fue posible inicializar Google.');
           }
-        });
-        if (result.error) throw result.error;
-      } catch (err) {
-        googleBtn.disabled = false;
-        googleBtn.classList.remove('loading');
-        googleBtn.querySelector('span:last-child').textContent = 'Continuar con Google';
-        m.style.display = 'block';
-        m.textContent = A.errorText(err, 'No fue posible iniciar con Google.');
-      }
+          return;
+        }
+        attempts += 1;
+        if (attempts < 50) return setTimeout(waitForGoogle, 100);
+        googleMessage.style.display = 'block';
+        googleMessage.textContent = 'No fue posible cargar Google Identity Services. Recarga la página e inténtalo nuevamente.';
+      };
+      waitForGoogle();
     };
+
+    renderGoogleButton();
 
     document.getElementById('loginForm').onsubmit = async function (e) {
       e.preventDefault(); var m = document.getElementById('loginMessage'); var btn = document.getElementById('loginBtn'); var email = document.getElementById('loginEmail').value.trim().toLowerCase();
