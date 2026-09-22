@@ -152,9 +152,20 @@
     var initials = String(displayName).trim().split(/\s+/).filter(Boolean).slice(0,2).map(function (x) { return x[0]; }).join('').toUpperCase() || 'SP';
     var roleLabels = { colaborador:'Colaborador', creador_contenido:'Creador de contenido', revisor:'Revisor', admin:'Administrador', super_admin:'Super Admin' };
     var role = roleLabels[u.role] || u.role || 'Colaborador';
+    var route=A.route(), section=route[0]||'home', mobileTitle='Inicio', mobileSubtitle='Formación institucional';
+    if(section==='catalog') mobileTitle='Mis capacitaciones';
+    else if(section==='games') mobileTitle='Juegos';
+    else if(section==='studio') mobileTitle='Gestión Aula';
+    else if(section==='certificate') mobileTitle='Certificado';
+    else if(section==='course') {
+      var mobileCourse=route[1] ? A.course(decodeURIComponent(route[1])) : null;
+      mobileTitle=mobileCourse ? mobileCourse.title : 'Capacitación';
+      mobileSubtitle='Ruta de aprendizaje';
+    }
     var management = A.canManage()
       ? '<button type="button" data-nav-hash="#/studio" class="' + A.nav('studio') + '">' + A.icon('shield') + '<span>Gestión Aula</span></button>'
       : '';
+    var mobileNavCount=A.canManage()?4:3;
 
     return '<div class="learner-app-shell">' +
       '<aside class="learner-global-sidebar">' +
@@ -178,14 +189,32 @@
         '</div>' +
       '</aside>' +
 
+      '<header class="learner-mobile-appbar">' +
+        '<button type="button" data-nav-hash="#/" class="mobile-app-brand" aria-label="Ir al inicio"><span>A</span></button>' +
+        '<div class="mobile-app-title"><strong>' + A.escape(mobileTitle) + '</strong><small>' + A.escape(mobileSubtitle) + '</small></div>' +
+        '<button type="button" id="mobileProfileBtn" class="mobile-profile-button" aria-label="Abrir cuenta"><span>' + A.escape(initials) + '</span></button>' +
+      '</header>' +
+
       '<div class="learner-shell-main"><div class="experience-route-progress"></div><div class="learner-route-transition">' + content + '</div></div>' +
 
-      '<nav class="learner-mobile-global-nav">' +
-        '<button type="button" data-nav-hash="#/" class="' + A.nav('home') + '">' + A.icon('home') + '<span>Inicio</span></button>' +
-        '<button type="button" data-nav-hash="#/catalog" class="' + A.nav('catalog') + '">' + A.icon('book') + '<span>Cursos</span></button>' +
-        '<button type="button" data-nav-hash="#/games" class="' + A.nav('games') + '">' + A.icon('game') + '<span>Juegos</span></button>' +
-        (A.canManage()?'<button type="button" data-nav-hash="#/studio" class="' + A.nav('studio') + '">' + A.icon('shield') + '<span>Gestión</span></button>':'') +
+      '<nav class="learner-mobile-global-nav nav-items-' + mobileNavCount + '" aria-label="Navegación móvil">' +
+        '<button type="button" data-nav-hash="#/" class="' + A.nav('home') + '"><span class="mobile-nav-icon">' + A.icon('home',21) + '</span><span>Inicio</span></button>' +
+        '<button type="button" data-nav-hash="#/catalog" class="' + A.nav('catalog') + '"><span class="mobile-nav-icon">' + A.icon('book',21) + '</span><span>Cursos</span></button>' +
+        '<button type="button" data-nav-hash="#/games" class="' + A.nav('games') + '"><span class="mobile-nav-icon">' + A.icon('game',21) + '</span><span>Juegos</span></button>' +
+        (A.canManage()?'<button type="button" data-nav-hash="#/studio" class="' + A.nav('studio') + '"><span class="mobile-nav-icon">' + A.icon('shield',21) + '</span><span>Gestión</span></button>':'') +
       '</nav>' +
+
+      '<div class="mobile-profile-backdrop" id="mobileProfileBackdrop"></div>' +
+      '<aside class="mobile-profile-sheet" id="mobileProfileSheet" aria-hidden="true">' +
+        '<div class="mobile-sheet-handle"></div>' +
+        '<div class="mobile-profile-identity"><span class="mobile-profile-avatar">' + A.escape(initials) + '</span><div><strong>' + A.escape(displayName) + '</strong><small>' + A.escape((u.email||'') + (u.email?' · ':'') + role) + '</small></div><button type="button" id="closeMobileProfile" aria-label="Cerrar">×</button></div>' +
+        '<div class="mobile-profile-actions">' +
+          '<button type="button" id="installAulaBtn">' + A.icon('sparkle',18) + '<span><strong>Instalar Aula</strong><small>Agregar a la pantalla de inicio</small></span>' + A.icon('arrow',17) + '</button>' +
+          '<button type="button" id="mobileRefreshBtn">' + A.icon('refresh',18) + '<span><strong>Actualizar aplicación</strong><small>Recargar contenido y diseño</small></span>' + A.icon('arrow',17) + '</button>' +
+          '<button type="button" id="mobileLogoutBtn" class="mobile-danger-action">' + A.icon('logout',18) + '<span><strong>Cerrar sesión</strong><small>Finalizar sesión institucional</small></span>' + A.icon('arrow',17) + '</button>' +
+        '</div>' +
+        '<div class="mobile-sheet-security">' + A.icon('shield',16) + '<span>Tu sesión usa autenticación institucional y datos protegidos en Supabase.</span></div>' +
+      '</aside>' +
     '</div>';
   };
 
@@ -193,11 +222,63 @@
     document.querySelectorAll('[data-nav-hash]').forEach(function (b) {
       b.onclick = function () { location.hash = b.getAttribute('data-nav-hash'); };
     });
-    var b = document.getElementById('logoutBtn');
-    if (b) b.onclick = async function () {
+
+    var signOut=async function(){
       await A.sb.auth.signOut();
       A.session = null; A.profile = null; A.trainingProfile = null; A.trainingAdmin = null;
       A.hydrate({}); w.AulaRender();
+    };
+    var b = document.getElementById('logoutBtn');
+    if (b) b.onclick = signOut;
+    var mobileLogout=document.getElementById('mobileLogoutBtn');
+    if(mobileLogout) mobileLogout.onclick=signOut;
+
+    var sheet=document.getElementById('mobileProfileSheet');
+    var backdrop=document.getElementById('mobileProfileBackdrop');
+    var openSheet=function(){
+      if(!sheet)return;
+      sheet.classList.add('open');
+      if(backdrop)backdrop.classList.add('open');
+      sheet.setAttribute('aria-hidden','false');
+      document.documentElement.classList.add('mobile-sheet-open');
+    };
+    var closeSheet=function(){
+      if(!sheet)return;
+      sheet.classList.remove('open');
+      if(backdrop)backdrop.classList.remove('open');
+      sheet.setAttribute('aria-hidden','true');
+      document.documentElement.classList.remove('mobile-sheet-open');
+    };
+    var profileBtn=document.getElementById('mobileProfileBtn');
+    if(profileBtn)profileBtn.onclick=openSheet;
+    var closeProfile=document.getElementById('closeMobileProfile');
+    if(closeProfile)closeProfile.onclick=closeSheet;
+    if(backdrop)backdrop.onclick=closeSheet;
+
+    var refreshBtn=document.getElementById('mobileRefreshBtn');
+    if(refreshBtn)refreshBtn.onclick=function(){location.reload();};
+
+    var installBtn=document.getElementById('installAulaBtn');
+    if(installBtn)installBtn.onclick=async function(){
+      if(w.matchMedia&&w.matchMedia('(display-mode: standalone)').matches || w.navigator.standalone){
+        A.toast('Aula ya está abierta como aplicación.');
+        closeSheet();
+        return;
+      }
+      if(w.__aulaInstallPrompt){
+        w.__aulaInstallPrompt.prompt();
+        try{await w.__aulaInstallPrompt.userChoice;}catch(_){}
+        w.__aulaInstallPrompt=null;
+        closeSheet();
+        return;
+      }
+      var ua=navigator.userAgent||'';
+      if(/iPad|iPhone|iPod/.test(ua)){
+        A.toast('En Safari: Compartir → Añadir a pantalla de inicio.');
+      } else {
+        A.toast('Abre el menú del navegador y elige Instalar aplicación o Añadir a pantalla de inicio.');
+      }
+      closeSheet();
     };
   };
 
