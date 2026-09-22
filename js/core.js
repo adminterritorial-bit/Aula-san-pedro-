@@ -152,25 +152,47 @@
     var initials = String(displayName).trim().split(/\s+/).filter(Boolean).slice(0,2).map(function (x) { return x[0]; }).join('').toUpperCase() || 'SP';
     var roleLabels = { colaborador:'Colaborador', creador_contenido:'Creador de contenido', revisor:'Revisor', admin:'Administrador', super_admin:'Super Admin' };
     var role = roleLabels[u.role] || u.role || 'Colaborador';
-    var management = A.canManage() ? '<a class="' + A.nav('studio') + '" href="#/studio">' + A.icon('shield') + '<span>Gestión Aula</span></a>' : '';
+    var management = A.canManage()
+      ? '<button type="button" data-nav-hash="#/studio" class="' + A.nav('studio') + '">' + A.icon('shield') + '<span>Gestión Aula</span></button>'
+      : '';
+
     return '<div class="learner-app-shell">' +
       '<aside class="learner-global-sidebar">' +
-        '<a href="#/" class="learner-sidebar-brand learner-sidebar-brand-original"><span class="aula-symbol">A</span><div><strong>Aula San Pedro</strong><small>FORMACIÓN INSTITUCIONAL</small></div></a>' +
+        '<button type="button" data-nav-hash="#/" class="learner-sidebar-brand learner-sidebar-brand-original">' +
+          '<span class="aula-symbol aula-symbol-premium"><span>A</span><i></i></span>' +
+          '<div class="aula-brand-copy"><strong>Aula San Pedro</strong><small>FORMACIÓN INSTITUCIONAL</small></div>' +
+        '</button>' +
+
         '<div class="learner-sidebar-user"><div class="learner-sidebar-avatar">' + A.escape(initials) + '</div><div><strong>' + A.escape(displayName) + '</strong><span>' + A.escape(role) + '</span></div></div>' +
+
         '<nav class="learner-sidebar-nav" aria-label="Navegación principal">' +
-          '<a class="' + A.nav('home') + '" href="#/">' + A.icon('home') + '<span>Inicio</span></a>' +
-          '<a class="' + A.nav('catalog') + '" href="#/catalog">' + A.icon('book') + '<span>Mis capacitaciones</span></a>' +
-          '<a class="' + A.nav('games') + '" href="#/games">' + A.icon('game') + '<span>Juegos</span></a>' +
+          '<button type="button" data-nav-hash="#/" class="' + A.nav('home') + '">' + A.icon('home') + '<span>Inicio</span></button>' +
+          '<button type="button" data-nav-hash="#/catalog" class="' + A.nav('catalog') + '">' + A.icon('book') + '<span>Mis capacitaciones</span></button>' +
+          '<button type="button" data-nav-hash="#/games" class="' + A.nav('games') + '">' + A.icon('game') + '<span>Juegos</span></button>' +
           management +
         '</nav>' +
-        '<div class="learner-sidebar-bottom"><button id="logoutBtn" class="learner-sidebar-signout">' + A.icon('logout') + '<span>Cerrar sesión</span></button>' +
-        '<div class="learner-sidebar-security">' + A.icon('sparkle',16) + '<span>Acceso institucional protegido con Google y Supabase.</span></div></div>' +
+
+        '<div class="learner-sidebar-bottom">' +
+          '<button id="logoutBtn" class="learner-sidebar-signout">' + A.icon('logout') + '<span>Cerrar sesión</span></button>' +
+          '<div class="learner-sidebar-security">' + A.icon('sparkle',16) + '<span>Acceso institucional protegido con Google y Supabase.</span></div>' +
+        '</div>' +
       '</aside>' +
+
       '<div class="learner-shell-main"><div class="experience-route-progress"></div><div class="learner-route-transition">' + content + '</div></div>' +
-      '<nav class="learner-mobile-global-nav"><a href="#/">' + A.icon('home') + '<span>Inicio</span></a><a href="#/catalog">' + A.icon('book') + '<span>Cursos</span></a><a href="#/games">' + A.icon('game') + '<span>Juegos</span></a>' + (A.canManage() ? '<a href="#/studio">' + A.icon('shield') + '<span>Gestión</span></a>' : '') + '</nav>' +
+
+      '<nav class="learner-mobile-global-nav">' +
+        '<button type="button" data-nav-hash="#/" class="' + A.nav('home') + '">' + A.icon('home') + '<span>Inicio</span></button>' +
+        '<button type="button" data-nav-hash="#/catalog" class="' + A.nav('catalog') + '">' + A.icon('book') + '<span>Cursos</span></button>' +
+        '<button type="button" data-nav-hash="#/games" class="' + A.nav('games') + '">' + A.icon('game') + '<span>Juegos</span></button>' +
+        (A.canManage()?'<button type="button" data-nav-hash="#/studio" class="' + A.nav('studio') + '">' + A.icon('shield') + '<span>Gestión</span></button>':'') +
+      '</nav>' +
     '</div>';
   };
+
   A.bindShell = function () {
+    document.querySelectorAll('[data-nav-hash]').forEach(function (b) {
+      b.onclick = function () { location.hash = b.getAttribute('data-nav-hash'); };
+    });
     var b = document.getElementById('logoutBtn');
     if (b) b.onclick = async function () {
       await A.sb.auth.signOut();
