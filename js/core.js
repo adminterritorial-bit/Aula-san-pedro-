@@ -38,7 +38,24 @@
       shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
       logout: '<path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 19V5a2 2 0 0 0-2-2h-6"/>',
       sparkle: '<path d="m12 3-1.2 3.3L7.5 7.5l3.3 1.2L12 12l1.2-3.3 3.3-1.2-3.3-1.2Z"/><path d="m5 14-.8 2.2L2 17l2.2.8L5 20l.8-2.2L8 17l-2.2-.8Z"/><path d="m19 13-.7 1.8-1.8.7 1.8.7L19 18l.7-1.8 1.8-.7-1.8-.7Z"/>',
-      refresh: '<path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18.5 9A7 7 0 0 0 6 6.5L4 11"/><path d="M5.5 15A7 7 0 0 0 18 17.5l2-4.5"/>'
+      refresh: '<path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18.5 9A7 7 0 0 0 6 6.5L4 11"/><path d="M5.5 15A7 7 0 0 0 18 17.5l2-4.5"/>',
+      play: '<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4Z"/>',
+      trophy: '<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 6H4v2a4 4 0 0 0 4 4"/><path d="M17 6h3v2a4 4 0 0 1-4 4"/>',
+      graduation: '<path d="m2 9 10-5 10 5-10 5Z"/><path d="M6 11v4c3 2 9 2 12 0v-4"/><path d="M22 9v6"/>',
+      calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+      filecheck: '<path d="M14 2H6a2 2 0 0 0-2 2v16h16V8Z"/><path d="M14 2v6h6"/><path d="m8 15 2 2 4-4"/>',
+      arrow: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+      search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+      filter: '<path d="M4 5h16"/><path d="M7 12h10"/><path d="M10 19h4"/>',
+      sliders: '<path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h2"/><path d="M10 12h10"/><circle cx="8" cy="12" r="2"/><path d="M4 18h8"/><path d="M16 18h4"/><circle cx="14" cy="18" r="2"/>',
+      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      badge: '<path d="M12 2 9.7 4.1 6.6 4 6 7l-2.3 2.1L5 12l-1.3 2.9L6 17l.6 3 3.1-.1L12 22l2.3-2.1 3.1.1.6-3 2.3-2.1L19 12l1.3-2.9L18 7l-.6-3-3.1.1Z"/><path d="m9 12 2 2 4-4"/>',
+      briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3"/><path d="M3 12h18"/><path d="M10 12v2h4v-2"/>',
+      target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+      layers: '<path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
+      brain: '<path d="M9.5 4.5a3 3 0 0 0-5.5 2A3 3 0 0 0 4 12a3 3 0 0 0 2 5.5A3 3 0 0 0 11 20V4a3 3 0 0 0-1.5.5Z"/><path d="M14.5 4.5a3 3 0 0 1 5.5 2 3 3 0 0 1 0 5.5 3 3 0 0 1-2 5.5A3 3 0 0 1 13 20V4a3 3 0 0 1 1.5.5Z"/><path d="M8 9H5M16 9h3M8 15H6M16 15h2"/>',
+      shapes: '<circle cx="6.5" cy="6.5" r="3.5"/><rect x="13" y="3" width="7" height="7" rx="1"/><path d="m6 14-4 7h8Z"/><path d="m17 14 4 7h-8Z"/>',
+      ordered: '<path d="M10 6h11M10 12h11M10 18h11"/><path d="M4 6h1v4H4M3 14h3l-3 4h3"/>'
     };
     return '<svg aria-hidden="true" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + (paths[name] || paths.sparkle) + '</svg>';
   };
