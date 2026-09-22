@@ -102,33 +102,71 @@
     var firstName=String((A.profile&&A.profile.full_name)||'Colaborador').trim().split(/\s+/)[0]||'Colaborador';
     var tp=A.trainingProfile;
     var visible=items.slice(0,6);
+    var journeys=items.map(journey);
+    var avg=journeys.length?Math.round(journeys.reduce(function(sum,x){return sum+x.pct;},0)/journeys.length):0;
+    var now=Date.now(),soon=now+14*86400000;
+    var dueSoon=journeys.filter(function(x){if(!x.a.due_at||x.cert)return false;var t=new Date(x.a.due_at+'T23:59:59').getTime();return t>=now&&t<=soon;}).length;
+    var unread=A.unreadNotifications();
+    var agenda=(A.experience&&A.experience.agenda||[]).slice(0,6);
+    var comps=(tp&&tp.competencies)||[];
+    var paths=(tp&&tp.paths)||[];
 
-    var html='<main class="learner-home-page">' +
-      '<section class="home-original-hero">' +
-        '<div class="home-hero-motion" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
-        '<div><span class="home-hero-pill">' + A.icon('sparkle',15) + ' Plataforma conectada</span>' +
-          '<h1>Aprende, participa y certifícate.</h1>' +
-          '<p>' + A.escape(firstName) + ', completa contenidos, recursos, actividades y juegos antes de presentar la evaluación final de cada ruta.</p>' +
-          '<div class="home-hero-actions"><a class="home-yellow-button" href="#/catalog">Ver mis capacitaciones</a>' +
-          (A.canManage()?'<a class="home-glass-button" href="#/studio">' + A.icon('shield',18) + ' Gestión Aula</a>':'') + '</div>' +
+    function priority(x){
+      if(x.overdue)return 0;
+      if(x.state==='exam')return 1;
+      if(x.state==='progress')return 2;
+      if(x.a.due_at)return 3;
+      return 4;
+    }
+    var next=journeys.slice().sort(function(a,b){var p=priority(a)-priority(b);if(p)return p;return String(a.a.due_at||'9999').localeCompare(String(b.a.due_at||'9999'));})[0]||null;
+    function agendaCard(ev){
+      var d=new Date(ev.starts_at);
+      var day=d.toLocaleDateString('es-CO',{day:'2-digit'});
+      var month=d.toLocaleDateString('es-CO',{month:'short'}).replace('.','').toUpperCase();
+      var cls=ev.kind==='deadline'?'deadline':ev.kind==='live'?'live':ev.kind==='campaign'?'campaign':'event';
+      return '<article class="agenda-card '+cls+'"><div class="agenda-date"><strong>'+day+'</strong><span>'+A.escape(month)+'</span></div><div class="agenda-copy"><span>'+A.escape(ev.kind==='deadline'?'VENCIMIENTO':ev.kind==='live'?'SESIÓN EN VIVO':ev.kind==='campaign'?'CAMPAÑA':'AGENDA')+'</span><h3>'+A.escape(ev.title)+'</h3><p>'+A.escape(ev.description||'Actividad programada del Aula.')+'</p></div>'+(ev.action_hash?'<a href="'+A.escape(ev.action_hash)+'" aria-label="Abrir">'+A.icon('arrow',17)+'</a>':'')+'</article>';
+    }
+    function nextCard(x){
+      if(!x)return '<section class="next-best-action empty">'+A.icon('sparkle',28)+'<div><span class="eyebrow">Siguiente mejor acción</span><h2>Tu ruta está al día.</h2><p>Cuando recibas una nueva capacitación o fecha límite, aparecerá aquí.</p></div></section>';
+      var c=x.c, action=x.state==='exam'?'Presentar examen':x.state==='progress'?'Continuar ruta':x.overdue?'Retomar ahora':'Comenzar';
+      return '<section class="next-best-action '+(x.overdue?'urgent':'')+'"><div class="next-action-glow"></div><div class="next-action-icon">'+A.icon(x.state==='exam'?'graduation':x.overdue?'clock':'lightning',26)+'</div><div class="next-action-copy"><span class="eyebrow">Siguiente mejor acción</span><h2>'+A.escape(c.title)+'</h2><p>'+(x.overdue?'Esta capacitación está vencida. Retómala para cerrar la obligación.':x.state==='exam'?'Ya completaste los contenidos obligatorios y puedes certificarte.':x.state==='progress'?'Continúa exactamente donde quedaste.':'Empieza esta capacitación y avanza en tu ruta institucional.')+'</p><div class="next-action-progress"><div><span style="width:'+x.pct+'%"></span></div><strong>'+x.pct+'%</strong></div></div><a href="#/course/'+encodeURIComponent(c.id)+'">'+action+' '+A.icon('arrow',17)+'</a></section>';
+    }
+
+    var html='<main class="learner-home-page experience-home">' +
+      '<section class="home-original-hero cinematic-hero">' +
+        '<div class="home-hero-motion" aria-hidden="true"><i></i><i></i><i></i><i></i><span class="motion-planet planet-a"></span><span class="motion-planet planet-b"></span><span class="motion-grid"></span><span class="motion-comet comet-a"></span><span class="motion-comet comet-b"></span></div>' +
+        '<div><span class="home-hero-pill">' + A.icon('sparkle',15) + ' Tu espacio de crecimiento</span>' +
+          '<h1>Hola, '+A.escape(firstName)+'.<br><em>Tu ruta sigue avanzando.</em></h1>' +
+          '<p>Aprende, demuestra competencias y conserva evidencia verificable de cada logro dentro de una sola experiencia.</p>' +
+          '<div class="home-hero-actions"><a class="home-yellow-button pushable" href="#/catalog">'+A.icon('play',17)+' Continuar aprendiendo</a>' +
+          (A.canManage()?'<a class="home-glass-button pushable" href="#/studio">' + A.icon('shield',18) + ' Gestión Aula</a>':'') + '</div>' +
         '</div>' +
-        '<div class="home-hero-metric"><strong>' + certs.length + '</strong><span>Certificados obtenidos</span></div>' +
+        '<div class="hero-radial-progress" style="--progress:'+avg+'"><div><strong>'+avg+'%</strong><span>avance promedio</span></div></div>' +
       '</section>' +
 
-      '<section class="home-metric-grid">' +
-        '<article>' + A.icon('book',24) + '<div><span>Asignadas visibles</span><strong>' + items.length + '</strong></div></article>' +
-        '<article>' + A.icon('graduation',24) + '<div><span>Certificadas</span><strong>' + certs.length + '</strong></div></article>' +
-        '<article>' + A.icon('game',24) + '<div><span>Juegos disponibles</span><strong>6+</strong></div></article>' +
-        '<article>' + A.icon('badge',24) + '<div><span>Nota mínima</span><strong>80%</strong></div></article>' +
+      '<section class="home-metric-grid animated-kpis">' +
+        '<article><span class="metric-icon">'+A.icon('target',24)+'</span><div><span>Avance promedio</span><strong data-count="'+avg+'">'+avg+'%</strong></div></article>' +
+        '<article><span class="metric-icon">'+A.icon('calendar',24)+'</span><div><span>Vencen en 14 días</span><strong data-count="'+dueSoon+'">'+dueSoon+'</strong></div></article>' +
+        '<article class="'+(unread?'has-alert':'')+'"><span class="metric-icon">'+A.icon('bell',24)+'</span><div><span>Notificaciones</span><strong data-count="'+unread+'">'+unread+'</strong></div></article>' +
+        '<article><span class="metric-icon">'+A.icon('trophy',24)+'</span><div><span>Certificados</span><strong data-count="'+certs.length+'">'+certs.length+'</strong></div></article>' +
       '</section>' +
+
+      '<section class="home-intelligence-grid">' +
+        nextCard(next) +
+        '<article class="skills-snapshot-card"><header><div><span class="eyebrow">Mapa de desarrollo</span><h2>Competencias de tu cargo</h2></div><span class="skills-position">'+A.icon('briefcase',15)+' '+A.escape(tp&&tp.position?tp.position.name:'Cargo por definir')+'</span></header>' +
+          (comps.length?'<div class="skills-orbit">'+comps.slice(0,5).map(function(x,i){var level=Math.max(1,Math.min(5,Number(x.required_level||1)));return '<div class="skill-row" style="--skill-delay:'+(i*70)+'ms"><div><strong>'+A.escape(x.name)+'</strong><small>'+A.escape(x.category||'Competencia institucional')+'</small></div><div class="skill-level"><span style="width:'+(level*20)+'%"></span></div><b>N'+level+'</b></div>';}).join('')+'</div>':'<div class="skills-empty">'+A.icon('target',24)+'<span>Cuando tu cargo tenga competencias configuradas, verás aquí el mapa esperado.</span></div>') +
+          '<footer><span>'+paths.length+' rutas asociadas</span><span>'+comps.length+' competencias esperadas</span></footer></article>' +
+      '</section>' +
+
+      (agenda.length?'<section class="home-section-heading section-spacing-top"><div><span>PRÓXIMOS HITOS</span><h2>Agenda y vencimientos</h2><p>Fechas importantes de tu formación en un solo lugar.</p></div></section><div class="agenda-carousel">'+agenda.map(agendaCard).join('')+'</div>':'') +
 
       routeCard(tp) +
 
-      '<section class="home-section-heading"><div><span>CONTINUAR APRENDIZAJE</span><h2>Capacitaciones asignadas</h2><p>Abre cualquier capacitación sin perder la navegación principal.</p></div><a href="#/catalog">Ver todas</a></section>' +
-      (visible.length?'<div class="home-course-grid">' + visible.map(homeCourseCard).join('') + '</div>':'<div class="home-empty">' + A.icon('book',30) + '<h3>Aún no tienes capacitaciones visibles</h3><p>Cuando te asignen una capacitación publicada aparecerá aquí.</p></div>') +
+      '<section class="home-section-heading"><div><span>CONTINUAR APRENDIZAJE</span><h2>Capacitaciones asignadas</h2><p>Retoma cualquier ruta sin perder tu progreso.</p></div><a href="#/catalog">Ver todas '+A.icon('arrow',14)+'</a></section>' +
+      (visible.length?'<div class="home-course-grid motion-card-grid">' + visible.map(homeCourseCard).join('') + '</div>':'<div class="home-empty">' + A.icon('book',30) + '<h3>Aún no tienes capacitaciones visibles</h3><p>Cuando te asignen una capacitación publicada aparecerá aquí.</p></div>') +
 
-      '<section class="home-section-heading section-spacing-top"><div><span>CERTIFICACIÓN</span><h2>Mis certificados</h2><p>Consulta las evidencias que ya has obtenido.</p></div></section>' +
-      (certs.length?'<div class="home-certificate-list">' + certs.slice(0,6).map(function(item){var co=A.course(item.course_id);return '<article><div><b>' + A.escape(co?co.title:'Capacitación institucional') + '</b><span>Código: ' + A.escape(item.code) + '</span><small>' + new Date(item.issued_at).toLocaleDateString('es-CO') + ' · ' + item.score + '%</small></div><a href="#/certificate/' + encodeURIComponent(item.code) + '">' + A.icon('trophy',16) + ' Abrir certificado</a></article>';}).join('') + '</div>':'<div class="home-empty compact">' + A.icon('trophy',28) + '<h3>Aún no tienes certificados</h3><p>Aprueba una capacitación con la nota mínima para generarlo automáticamente.</p></div>') +
+      '<section class="home-section-heading section-spacing-top"><div><span>CREDENCIALES</span><h2>Mis certificados</h2><p>Tu historial verificable de aprendizaje institucional.</p></div></section>' +
+      (certs.length?'<div class="home-certificate-list">' + certs.slice(0,6).map(function(item){var co=A.course(item.course_id);return '<article class="certificate-mini-card"><span class="certificate-mini-seal">'+A.icon('trophy',18)+'</span><div><b>' + A.escape(co?co.title:'Capacitación institucional') + '</b><span>Código: ' + A.escape(item.code) + '</span><small>' + new Date(item.issued_at).toLocaleDateString('es-CO') + ' · ' + item.score + '%</small></div><a href="#/certificate/' + encodeURIComponent(item.code) + '">' + A.icon('arrow',16) + '</a></article>';}).join('') + '</div>':'<div class="home-empty compact">' + A.icon('trophy',28) + '<h3>Aún no tienes certificados</h3><p>Aprueba una capacitación con la nota mínima para generar tu primera credencial.</p></div>') +
     '</main>';
 
     document.getElementById('root').innerHTML=A.shell(html); A.bindShell();
