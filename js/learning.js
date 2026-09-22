@@ -363,7 +363,7 @@
     var retryPractice=document.getElementById('retryPractice');if(retryPractice)retryPractice.onclick=async function(){var p=A.ui.practice[id];A.ui.practice[id]={loading:true,nextBlock:p.nextBlock};A.courseView(id);try{var q=await A.rpc('aula_get_practice_question',{p_course_id:id,p_seed:String(Date.now())});A.ui.practice[id]={question:q,checked:false,selected:null,correct:false,nextBlock:p.nextBlock};}catch(err){A.ui.practice[id]={error:A.errorText(err),nextBlock:p.nextBlock};}A.courseView(id);};
     var skipPractice=document.getElementById('skipPractice');if(skipPractice)skipPractice.onclick=function(){var p=A.ui.practice[id];if(p&&p.nextBlock){A.ui.selectedBlock[id]=p.nextBlock;delete A.ui.practice[id];A.courseView(id);}};
 
-    function openExam(){if(!examUnlocked)return;A.ui.examCourse=id;A.ui.lastExam=null;A.courseView(id);}
+    function openExam(){if(!examUnlocked)return;setCourseOutline(false);A.ui.examCourse=id;A.ui.lastExam=null;A.courseView(id);}
     var launch=document.getElementById('launchExam');if(launch)launch.onclick=openExam;
     var outlineExam=document.getElementById('outlineExam');if(outlineExam)outlineExam.onclick=openExam;
 
