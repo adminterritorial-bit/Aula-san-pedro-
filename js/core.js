@@ -89,15 +89,40 @@
   };
 
   A.loginView = function (notice) {
-    document.getElementById('root').innerHTML = '<main class="auth-page"><section class="auth-hero"><div class="demo-brand-mark">A</div><span class="eyebrow-light">Aula institucional · San Pedro</span><h1>Aprende, participa y certifica tu formación desde una sola experiencia.</h1><p>Rutas secuenciales, contenidos, actividades, evaluación, progreso, certificados y gestión administrativa conectados a Supabase.</p><div class="auth-feature-grid"><div><strong>Acceso institucional</strong><span>Usa la misma cuenta Auth disponible en la plataforma municipal.</span></div><div><strong>Datos aislados</strong><span>El Aula comparte autenticación, no las tablas de otros aplicativos.</span></div></div></section>' +
-      '<section class="auth-panel"><form class="auth-form" id="loginForm"><div><span class="eyebrow">Acceso a la plataforma</span><h2>Iniciar sesión</h2><p>Ingresa con tu correo y contraseña.</p></div>' +
-      '<label>Correo<input id="loginEmail" type="email" autocomplete="username" required></label><label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label>' +
-      '<button class="primary-button" id="loginBtn">Ingresar</button><p id="loginMessage" class="warning-message" style="display:' + (notice ? 'block' : 'none') + '">' + A.escape(notice || '') + '</p></form></section></main>';
+    document.getElementById('root').innerHTML = '<main class="auth-page"><section class="auth-hero"><div class="demo-brand-mark">A</div><span class="eyebrow-light">Aula institucional · San Pedro</span><h1>Ingresa con tu cuenta institucional de Google.</h1><p>El acceso principal utiliza Google Workspace de la Alcaldía. El Aula conserva cursos, progreso, evaluaciones y certificados en Supabase.</p><div class="auth-feature-grid"><div><strong>Cuenta institucional</strong><span>Acceso exclusivo para @' + A.INSTITUTIONAL_DOMAIN + '.</span></div><div><strong>Inicio rápido</strong><span>Sin crear otra contraseña si ya tienes tu cuenta de Google institucional.</span></div></div></section>' +
+      '<section class="auth-panel"><div class="auth-form"><div><span class="eyebrow">Acceso institucional</span><h2>Iniciar sesión</h2><p>Usa tu cuenta Google de la Alcaldía de San Pedro.</p></div>' +
+      '<div class="institutional-domain-pill">@' + A.INSTITUTIONAL_DOMAIN + '</div>' +
+      '<button type="button" class="google-login-button" id="googleLoginBtn"><span class="google-g-mark">G</span><span>Continuar con Google</span></button>' +
+      '<p id="googleLoginMessage" class="warning-message" style="display:' + (notice ? 'block' : 'none') + '">' + A.escape(notice || '') + '</p>' +
+      '<div class="auth-divider"><span>o acceso alterno</span></div>' +
+      '<details class="alternate-login"><summary>Ingresar con correo y contraseña</summary><form id="loginForm" class="alternate-login-form"><label>Correo institucional<input id="loginEmail" type="email" autocomplete="username" placeholder="usuario@' + A.INSTITUTIONAL_DOMAIN + '" required></label><label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label><button class="secondary-button" id="loginBtn">Ingresar con contraseña</button><p id="loginMessage" class="warning-message" style="display:none"></p></form></details>' +
+      '<small class="demo-muted">El acceso externo al dominio institucional está bloqueado también en la base de datos.</small></div></section></main>';
+
+    var googleBtn = document.getElementById('googleLoginBtn');
+    googleBtn.onclick = async function () {
+      var m = document.getElementById('googleLoginMessage');
+      m.style.display = 'none'; googleBtn.disabled = true; googleBtn.classList.add('loading'); googleBtn.querySelector('span:last-child').textContent = 'Conectando con Google…';
+      try {
+        var result = await A.sb.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: A.oauthRedirect(),
+            queryParams: { hd: A.INSTITUTIONAL_DOMAIN, prompt: 'select_account' }
+          }
+        });
+        if (result.error) throw result.error;
+      } catch (err) {
+        googleBtn.disabled = false; googleBtn.classList.remove('loading'); googleBtn.querySelector('span:last-child').textContent = 'Continuar con Google';
+        m.style.display = 'block'; m.textContent = A.errorText(err, 'No fue posible iniciar con Google.');
+      }
+    };
+
     document.getElementById('loginForm').onsubmit = async function (e) {
-      e.preventDefault(); var m = document.getElementById('loginMessage'); var btn = document.getElementById('loginBtn');
+      e.preventDefault(); var m = document.getElementById('loginMessage'); var btn = document.getElementById('loginBtn'); var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      if (!A.isInstitutionalEmail(email)) { m.style.display = 'block'; m.textContent = 'Usa tu correo institucional @' + A.INSTITUTIONAL_DOMAIN + '.'; return; }
       m.style.display = 'none'; btn.disabled = true; btn.textContent = 'Ingresando…';
       try {
-        var result = await A.sb.auth.signInWithPassword({ email: document.getElementById('loginEmail').value.trim(), password: document.getElementById('loginPass').value });
+        var result = await A.sb.auth.signInWithPassword({ email: email, password: document.getElementById('loginPass').value });
         if (result.error) throw result.error;
         A.session = result.data.session;
         await A.refresh();
@@ -105,7 +130,7 @@
         w.AulaRender();
       } catch (err) {
         m.style.display = 'block'; m.textContent = A.errorText(err, 'No fue posible iniciar sesión.');
-      } finally { btn.disabled = false; btn.textContent = 'Ingresar'; }
+      } finally { btn.disabled = false; btn.textContent = 'Ingresar con contraseña'; }
     };
   };
 
@@ -139,10 +164,32 @@
     var sessionResult = await A.sb.auth.getSession();
     if (sessionResult.error) throw sessionResult.error;
     A.session = sessionResult.data.session;
-    if (A.session) await A.refresh();
+
+    if (A.session) {
+      var email = A.session.user && A.session.user.email;
+      if (!A.isInstitutionalEmail(email)) {
+        await A.sb.auth.signOut({ scope: 'local' });
+        A.session = null;
+        A.profile = null;
+        throw new Error('Esta Aula solo admite cuentas institucionales @' + A.INSTITUTIONAL_DOMAIN + '.');
+      }
+      try {
+        await A.refresh();
+      } catch (err) {
+        await A.sb.auth.signOut({ scope: 'local' });
+        A.session = null;
+        A.profile = null;
+        throw err;
+      }
+    }
+
     A.sb.auth.onAuthStateChange(function (event, session) {
       A.session = session;
-      if (event === 'SIGNED_OUT') { A.profile = null; A.hydrate({}); if (w.AulaRender) w.AulaRender(); }
+      if (event === 'SIGNED_OUT') {
+        A.profile = null;
+        A.hydrate({});
+        if (w.AulaRender) w.AulaRender();
+      }
     });
   };
 })(window);

@@ -46,3 +46,26 @@ La Edge Function usa `SUPABASE_SERVICE_ROLE_KEY` únicamente en el entorno segur
 ## Aislamiento de Auth compartido
 
 Desactivar un usuario desde Aula cambia únicamente `aula_memberships.is_active`. No banea ni elimina la identidad global de Supabase, por lo que no afecta Hacienda, Documentos u otros aplicativos conectados al mismo Auth.
+
+
+## Inicio de sesión con Google Workspace
+
+El frontend usa `supabase.auth.signInWithOAuth({ provider: "google" })` como acceso principal y envía `hd=sanpedro-valle.gov.co` para orientar el selector de cuentas.
+
+La seguridad no depende de ese parámetro: la base de datos aplica el dominio institucional mediante el trigger `aula_memberships_institutional_email`, y la Edge Function de usuarios también rechaza correos externos.
+
+Dominio permitido:
+
+`sanpedro-valle.gov.co`
+
+Callback que debe registrarse en Google Cloud:
+
+`https://dvdpgllezrmttrknbcjq.supabase.co/auth/v1/callback`
+
+URL de retorno del aplicativo:
+
+`https://adminterritorial-bit.github.io/Aula-san-pedro-/`
+
+El código calcula el retorno con `location.origin + location.pathname`, por lo que no queda amarrado a un hash interno.
+
+Para completar la habilitación del proveedor administrado de Supabase se requiere configurar en **Authentication → Providers → Google** un OAuth Client ID y Client Secret creados en Google Cloud, y agregar la URL del Aula en **Authentication → URL Configuration**. Estas credenciales pertenecen a Google Cloud y no se almacenan en este repositorio.
