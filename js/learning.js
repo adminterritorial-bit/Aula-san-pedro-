@@ -301,8 +301,10 @@
         '<div class="learner-hero-content"><div class="learner-hero-copy"><div class="hero-chip-row"><span class="hero-learning-chip">'+A.icon('book',14)+' Capacitación institucional</span><span class="hero-learning-chip soft">'+A.escape(course.category||'General')+' · '+Number(course.estimated_minutes||30)+' min</span></div><h1>'+A.escape(course.title)+'</h1><p>'+A.escape(course.description||'Continúa tu ruta de aprendizaje y completa cada actividad a tu ritmo.')+'</p><div class="hero-progress-inline"><div><span style="width:'+pct+'%"></span></div><strong>'+pct+'% completado</strong><small>'+required.filter(function(x){return done.indexOf(x.block.id)>=0;}).length+' de '+required.length+' contenidos obligatorios</small></div><div class="learner-hero-actions"><button id="heroContinue" class="hero-primary-button">'+A.icon('play',18)+' '+(pct?'Continuar donde quedé':'Comenzar capacitación')+'</button><span>'+(examUnlocked?'Examen final desbloqueado':'Tu progreso se guarda automáticamente al avanzar')+'</span></div></div></div>' +
       '</section>' +
 
+      '<div class="mobile-course-control-bar"><button type="button" id="openCourseOutline">'+A.icon('layers',18)+'<span><strong>Ruta</strong><small>'+(current?A.escape(current.phase.title):'Capacitación')+'</small></span></button><div class="mobile-course-progress"><span><i style="width:'+pct+'%"></i></span><strong>'+pct+'%</strong></div></div>' +
+      '<button type="button" id="courseOutlineBackdrop" class="course-outline-backdrop" aria-label="Cerrar ruta"></button>' +
       '<div class="learner-course-layout">' +
-        '<aside class="learner-outline"><div class="outline-header"><div><span>Tu ruta</span><strong>Contenido de la capacitación</strong></div></div><div class="outline-scroll">'+outline+'<button class="outline-exam-card '+(examUnlocked?'unlocked':'')+'" id="outlineExam" '+(!examUnlocked?'disabled':'')+'><span>'+(examUnlocked?A.icon('graduation',20):'🔒')+'</span><div><strong>Examen final</strong><small>'+(examUnlocked?'Desbloqueado · aprobar con '+Number(course.passing_score||80)+'%':'Completa los contenidos obligatorios')+'</small></div>'+(examUnlocked?A.icon('arrow',17):'')+'</button></div></aside>' +
+        '<aside class="learner-outline" id="courseOutline"><div class="outline-header"><div><span>Tu ruta</span><strong>Contenido de la capacitación</strong></div><button type="button" id="closeCourseOutline" class="mobile-outline-close" aria-label="Cerrar ruta">×</button></div><div class="outline-scroll">'+outline+'<button class="outline-exam-card '+(examUnlocked?'unlocked':'')+'" id="outlineExam" '+(!examUnlocked?'disabled':'')+'><span>'+(examUnlocked?A.icon('graduation',20):'🔒')+'</span><div><strong>Examen final</strong><small>'+(examUnlocked?'Desbloqueado · aprobar con '+Number(course.passing_score||80)+'%':'Completa los contenidos obligatorios')+'</small></div>'+(examUnlocked?A.icon('arrow',17):'')+'</button></div></aside>' +
 
         '<section class="learner-stage-column"><div class="stage-context-bar"><div><span>'+(A.ui.examCourse===id?'Evaluación final':A.escape(current?current.phase.title:'Capacitación'))+'</span>'+(current&&A.ui.examCourse!==id?'<strong>'+(currentIndex+1)+' de '+flat.length+'</strong>':'')+'</div>'+(current&&A.ui.examCourse!==id?'<div class="stage-context-progress"><span style="width:'+(flat.length?((currentIndex+1)/flat.length)*100:0)+'%"></span></div>':'')+'</div><div class="learner-stage-card">'+stageContent+'</div>'+stageNav+examCallout+'</section>' +
 
@@ -313,7 +315,21 @@
 
     document.getElementById('root').innerHTML=A.shell(html);A.bindShell();
 
-    document.querySelectorAll('.outline-block-list [data-block]').forEach(function(b){b.onclick=function(){A.ui.examCourse=null;A.ui.selectedBlock[id]=b.getAttribute('data-block');A.courseView(id);};});
+    var courseOutline=document.getElementById('courseOutline');
+    var courseOutlineBackdrop=document.getElementById('courseOutlineBackdrop');
+    var openCourseOutline=document.getElementById('openCourseOutline');
+    var closeCourseOutline=document.getElementById('closeCourseOutline');
+    function setCourseOutline(open){
+      if(!courseOutline)return;
+      courseOutline.classList.toggle('mobile-open',!!open);
+      if(courseOutlineBackdrop)courseOutlineBackdrop.classList.toggle('open',!!open);
+      document.documentElement.classList.toggle('course-outline-open',!!open);
+    }
+    if(openCourseOutline)openCourseOutline.onclick=function(){setCourseOutline(true);};
+    if(closeCourseOutline)closeCourseOutline.onclick=function(){setCourseOutline(false);};
+    if(courseOutlineBackdrop)courseOutlineBackdrop.onclick=function(){setCourseOutline(false);};
+
+    document.querySelectorAll('.outline-block-list [data-block]').forEach(function(b){b.onclick=function(){setCourseOutline(false);A.ui.examCourse=null;A.ui.selectedBlock[id]=b.getAttribute('data-block');A.courseView(id);};});
     document.querySelectorAll('[data-phase-first]').forEach(function(b){b.onclick=function(){var bid=b.getAttribute('data-phase-first');if(bid){A.ui.selectedBlock[id]=bid;A.courseView(id);}};});
     var heroContinue=document.getElementById('heroContinue');if(heroContinue)heroContinue.onclick=function(){var el=document.querySelector('.learner-stage-column');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});};
 
