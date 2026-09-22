@@ -1,6 +1,12 @@
 (function (w) {
   var A = w.AulaDemo = w.AulaDemo || {};
   A.sb = w.AulaSupabase;
+  A.INSTITUTIONAL_DOMAIN = 'sanpedro-valle.gov.co';
+  A.oauthRedirect = function () { return location.origin + location.pathname; };
+  A.isInstitutionalEmail = function (email) {
+    email = String(email || '').trim().toLowerCase();
+    return email.endsWith('@' + A.INSTITUTIONAL_DOMAIN) && email.split('@').length === 2;
+  };
   A.session = null;
   A.profile = null;
   A.state = { users: [], courses: [], assignments: [], progress: {}, certificates: [], activity: [] };
