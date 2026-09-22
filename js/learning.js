@@ -278,9 +278,30 @@
   };
 
   A.games = function () {
-    var list=[['Memoria de conceptos','Une conceptos y definiciones.'],['Clasificación','Clasifica riesgos, señales o procesos.'],['Ordenar pasos','Organiza procedimientos y protocolos.'],['Búsqueda visual','Encuentra elementos dentro de una imagen.'],['Mini RPG','Recorre zonas y completa misiones.'],['Cartas de decisión','Resuelve casos y recibe retroalimentación.']];
-    var html='<div class="learner-games-page"><section class="games-hero"><div><span class="eyebrow-light">Biblioteca didáctica</span><h1>Aprender también puede sentirse como jugar.</h1><p>Formatos interactivos reutilizables para complementar cualquier capacitación.</p></div><div class="games-hero-orb">6</div></section><div class="premium-game-grid">'+list.map(function(g,i){return '<article><div class="game-index">0'+(i+1)+'</div><h3>'+A.escape(g[0])+'</h3><p>'+A.escape(g[1])+'</p><span>Plantilla disponible</span></article>';}).join('')+'</div></div>';
+    var list=[
+      {key:'memory',name:'Memoria de conceptos',icon:'brain',description:'Une conceptos, definiciones, principios o responsabilidades de una capacitación.',tag:'Memoria',accent:'violet'},
+      {key:'classify',name:'Clasificación',icon:'shapes',description:'Clasifica riesgos, señales, documentos, procesos o decisiones en categorías.',tag:'Clasificación',accent:'cyan'},
+      {key:'order',name:'Ordenar pasos',icon:'ordered',description:'Organiza procedimientos y protocolos en la secuencia correcta.',tag:'Secuencia',accent:'amber'},
+      {key:'visual',name:'Búsqueda visual',icon:'search',description:'Encuentra riesgos, elementos o puntos de control dentro de una imagen.',tag:'Observación',accent:'blue'},
+      {key:'rpg',name:'Mini RPG',icon:'game',description:'Recorre zonas, completa misiones y toma decisiones dentro de un escenario.',tag:'Simulación',accent:'indigo'},
+      {key:'cards',name:'Cartas de decisión',icon:'layers',description:'Resuelve casos prácticos, compara alternativas y recibe retroalimentación.',tag:'Decisiones',accent:'green'}
+    ];
+    var selected=A.ui.gamePreview?list.find(function(x){return x.key===A.ui.gamePreview;}):null;
+
+    var html='<main class="learner-games-page">' +
+      '<section class="games-original-hero"><div><span>' + A.icon('sparkle',15) + ' Biblioteca didáctica</span><h1>Juegos San Pedro</h1><p>Plantillas interactivas para convertir contenidos institucionales en experiencias más dinámicas sin salir del Aula.</p></div><div class="games-hero-metric"><strong>' + list.length + '</strong><span>Plantillas disponibles</span></div></section>' +
+      '<section class="games-section-heading"><span>BIBLIOTECA INTERACTIVA</span><h2>Explora las dinámicas disponibles</h2><p>Selecciona una experiencia para revisar cómo puede utilizarse dentro de una capacitación.</p></section>' +
+      '<div class="games-grid">' + list.map(function(g,i){return '<article tabindex="0" role="button" data-game-preview="' + g.key + '" class="game-card-accent-' + g.accent + '" style="--game-delay:' + (i*55) + 'ms"><div>' + A.icon(g.icon,28) + '</div><small class="game-card-kicker">' + A.escape(g.tag) + '</small><h3>' + A.escape(g.name) + '</h3><p>' + A.escape(g.description) + '</p><span>Plantilla disponible</span></article>';}).join('') + '</div>' +
+      (selected?'<section class="game-preview-drawer"><button type="button" id="closeGamePreview" class="game-preview-close">×</button><div class="game-preview-icon game-card-accent-' + selected.accent + '">' + A.icon(selected.icon,34) + '</div><div class="game-preview-copy"><span>PREVISUALIZACIÓN DIDÁCTICA</span><h2>' + A.escape(selected.name) + '</h2><p>' + A.escape(selected.description) + '</p><div class="game-preview-points"><span>✓ Reutilizable por capacitación</span><span>✓ Retroalimentación inmediata</span><span>✓ Compatible con rutas obligatorias</span><span>✓ Evidencia de interacción preparada</span></div></div><div class="game-preview-actions"><a href="#/catalog" class="secondary-button">Volver a cursos</a>' + (A.canManage()?'<a href="#/studio" class="primary-button">Configurar en Gestión Aula</a>':'') + '</div></section>':'') +
+    '</main>';
+
     document.getElementById('root').innerHTML=A.shell(html);A.bindShell();
+    document.querySelectorAll('[data-game-preview]').forEach(function(card){
+      function open(){A.ui.gamePreview=card.getAttribute('data-game-preview');A.games();}
+      card.onclick=open;
+      card.onkeydown=function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();open();}};
+    });
+    var close=document.getElementById('closeGamePreview');if(close)close.onclick=function(){A.ui.gamePreview=null;A.games();};
   };
 
   A.certificateView = function (code) {
