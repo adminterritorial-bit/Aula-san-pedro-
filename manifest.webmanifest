@@ -1,0 +1,70 @@
+{
+  "id": "./",
+  "name": "Aula San Pedro",
+  "short_name": "Aula",
+  "description": "Plataforma institucional de formación, aprendizaje y certificación de la Alcaldía de San Pedro.",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f7fb",
+  "theme_color": "#061f46",
+  "lang": "es-CO",
+  "categories": [
+    "education",
+    "productivity",
+    "business"
+  ],
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Inicio",
+      "short_name": "Inicio",
+      "url": "./#/",
+      "icons": [
+        {
+          "src": "./favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Mis capacitaciones",
+      "short_name": "Cursos",
+      "url": "./#/catalog",
+      "icons": [
+        {
+          "src": "./favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Juegos",
+      "short_name": "Juegos",
+      "url": "./#/games",
+      "icons": [
+        {
+          "src": "./favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
