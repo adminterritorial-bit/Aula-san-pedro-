@@ -129,22 +129,39 @@
     return '<section class="practice-card"><span class="eyebrow">Pregunta práctica</span><h3>'+A.escape(q.prompt)+'</h3><div class="practice-options">'+(q.options||[]).map(function(op,i){return '<button class="practice-option '+(p.selected===i?(p.correct?'correct':'wrong'):'')+'" data-practice-option="'+i+'">'+A.escape(op)+'</button>';}).join('')+'</div>'+(p.checked?'<p class="practice-feedback '+(p.correct?'ok':'bad')+'">'+(p.correct?'Correcto. Continúa con confianza.':'Respuesta no acertada. Revisa el contenido y vuelve a practicar.')+'</p>':'')+'<button id="loadPractice" class="text-button">Cambiar pregunta</button></section>';
   }
 
+  function achievementMarkup(course, done, required, cert) {
+    var pct=required.length?Math.round(required.filter(function(x){return done.indexOf(x.block.id)>=0;}).length/required.length*100):0;
+    var achievements=[
+      {name:'Primer paso',ok:done.length>=1,icon:'◆'},
+      {name:'Mitad de ruta',ok:pct>=50,icon:'◐'},
+      {name:'Ruta completada',ok:pct>=100,icon:'✓'},
+      {name:'Certificación',ok:!!cert,icon:'★'}
+    ];
+    var phases=(course.phases||[]).map(function(p){
+      var req=(p.blocks||[]).filter(function(b){return b.required;});
+      var complete=req.filter(function(b){return done.indexOf(b.id)>=0;}).length;
+      var phasePct=req.length?Math.round(complete/req.length*100):0;
+      return '<div class="phase-progress-row"><div><strong>'+A.escape(p.title)+'</strong><small>'+complete+'/'+req.length+' obligatorios</small></div><div class="mini-progress"><span style="width:'+phasePct+'%"></span></div><b>'+phasePct+'%</b></div>';
+    }).join('');
+    return '<section class="course-achievements"><div class="course-achievement-card"><span class="eyebrow">Tus logros</span><div class="achievement-grid">'+achievements.map(function(a){return '<div class="'+(a.ok?'unlocked':'locked')+'"><span>'+a.icon+'</span><small>'+A.escape(a.name)+'</small></div>';}).join('')+'</div></div><div class="phase-progress-card"><span class="eyebrow">Progreso por fase</span>'+phases+'</div></section>';
+  }
+
   A.courseView = function (id) {
     var c=A.course(id),uid=A.currentUid(); if(!c){location.hash='#/catalog';return;}
     var flat=A.flatten(c),done=A.progress(uid,id),required=flat.filter(function(x){return x.block.required;});
     var allDone=required.every(function(x){return done.indexOf(x.block.id)>=0;});
     var selected=A.ui.selectedBlock[id];
     if(!selected||!flat.some(function(x){return x.block.id===selected;})){var next=flat.find(function(x){return done.indexOf(x.block.id)<0;})||flat[0];selected=next&&next.block.id;A.ui.selectedBlock[id]=selected;}
-    var current=flat.find(function(x){return x.block.id===selected;}),pct=A.percent(uid,c);
+    var current=flat.find(function(x){return x.block.id===selected;}),pct=A.percent(uid,c),currentIndex=flat.findIndex(function(x){return current&&x.block.id===current.block.id;});
 
     var rail=flat.map(function(x,i){var complete=done.indexOf(x.block.id)>=0;var locked=!A.canManage()&&flat.slice(0,i).filter(function(y){return y.block.required;}).some(function(y){return done.indexOf(y.block.id)<0;});return '<button class="course-rail-item '+(x.block.id===selected?'active':'')+' '+(complete?'done':'')+'" data-block="'+A.escape(x.block.id)+'" '+(locked?'disabled':'')+'><span class="rail-state">'+(complete?'✓':locked?'🔒':i+1)+'</span><div><strong>'+A.escape(x.block.title)+'</strong><small>'+A.escape(x.phase.title)+'</small></div></button>';}).join('');
 
-    var stage=current?'<section class="course-stage-card"><div class="course-stage-heading"><div><span class="eyebrow">'+A.escape(current.phase.title)+'</span><h2>'+A.escape(current.block.title)+'</h2></div><span class="content-type-chip">'+A.escape(current.block.type||'reading')+'</span></div>'+blockBody(current)+'<div class="course-stage-actions"><button id="completeBlock" class="'+(done.indexOf(current.block.id)>=0?'secondary-button':'primary-button')+'">'+(done.indexOf(current.block.id)>=0?'✓ Completado':'Marcar como completado')+'</button></div></section>':'<section class="course-stage-card"><p>No hay contenido configurado.</p></section>';
+    var stage=current?'<section class="course-stage-card"><div class="course-stage-heading"><div><span class="eyebrow">'+A.escape(current.phase.title)+'</span><h2>'+A.escape(current.block.title)+'</h2></div><span class="content-type-chip">'+A.escape(current.block.type||'reading')+'</span></div>'+blockBody(current)+'<div class="course-stage-actions">'+(currentIndex>0?'<button id="previousContent" class="secondary-button">← Contenido anterior</button>':'')+'<button id="completeBlock" class="'+(done.indexOf(current.block.id)>=0?'secondary-button':'primary-button')+'">'+(done.indexOf(current.block.id)>=0?'✓ Este paso ya cuenta en tu progreso':'Marcar como completado')+'</button>'+(done.indexOf(current.block.id)>=0&&flat[currentIndex+1]?'<button id="nextContent" class="secondary-button">Siguiente →</button>':'')+'</div></section>':'<section class="course-stage-card"><p>No hay contenido configurado.</p></section>';
 
     var exam=A.ui.examCourse===id?(A.ui.lastExam&&A.ui.lastExam.courseId===id?resultMarkup(A.ui.lastExam):examMarkup(c)):'<section class="course-exam-teaser"><div><span class="eyebrow">Evaluación final</span><h2>Certifica tu aprendizaje</h2><p>'+(allDone?'Ya completaste todos los contenidos obligatorios.':'Completa primero todos los contenidos obligatorios para desbloquear el examen.')+'</p></div><button id="launchExam" class="primary-button" '+(allDone?'':'disabled')+'>Presentar examen</button></section>';
 
     var html='<div class="learner-course-app"><section class="learner-course-hero">' + (c.cover_url ? '<img class="learner-hero-cover" src="' + A.escape(c.cover_url) + '" alt="">' : '') + '<div class="learner-hero-overlay"></div><div class="learner-hero-content"><div class="learner-hero-copy"><div class="hero-chip-row"><span class="hero-learning-chip">Capacitación institucional</span><span class="hero-learning-chip soft">'+required.length+' contenidos obligatorios</span><span class="hero-learning-chip soft">'+A.escape(c.category||'General')+' · '+Number(c.estimated_minutes||30)+' min</span></div><h1>'+A.escape(c.title)+'</h1><p>'+A.escape(c.description)+'</p><div class="learner-hero-actions"><a class="hero-primary-button" href="#/catalog">← Mis capacitaciones</a><span>Tu progreso se guarda automáticamente.</span></div></div><div class="hero-progress-orbit"><div class="hero-progress-ring" style="--progress:'+pct+'"><div><strong>'+pct+'%</strong><span>completado</span></div></div><small>'+done.length+' contenidos registrados</small></div></div></section>' +
-      '<div class="course-workspace"><aside class="course-learning-rail"><div class="rail-head"><span class="eyebrow">Ruta de aprendizaje</span><h3>Contenido</h3></div>'+rail+'</aside><main class="course-learning-stage">'+stage+'<div class="course-after-stage">'+practiceMarkup(c)+exam+'</div></main></div></div>';
+      '<div class="course-workspace"><aside class="course-learning-rail"><div class="rail-head"><span class="eyebrow">Tu recorrido de aprendizaje</span><h3>Contenido de la capacitación</h3></div>'+rail+'</aside><main class="course-learning-stage">'+stage+achievementMarkup(c,done,required,A.cert(uid,id))+'<div class="course-after-stage">'+practiceMarkup(c)+exam+'</div></main></div></div>';
 
     document.getElementById('root').innerHTML=A.shell(html);A.bindShell();
     document.querySelectorAll('.course-rail-item').forEach(function(b){b.onclick=function(){A.ui.selectedBlock[id]=b.getAttribute('data-block');A.courseView(id);};});
@@ -154,10 +171,13 @@
     var complete=document.getElementById('completeBlock');
     if(complete&&current)complete.onclick=async function(){if(done.indexOf(current.block.id)>=0)return;complete.disabled=true;complete.textContent='Guardando…';try{await A.rpc('aula_complete_block',{p_course_id:id,p_block_id:current.block.id});if(done.indexOf(current.block.id)<0)done.push(current.block.id);A.toast('Progreso guardado.');var ix=flat.findIndex(function(x){return x.block.id===current.block.id;});if(flat[ix+1])A.ui.selectedBlock[id]=flat[ix+1].block.id;A.courseView(id);}catch(err){A.toast(A.errorText(err));complete.disabled=false;complete.textContent='Marcar como completado';}};
 
+    var previousContent=document.getElementById('previousContent');if(previousContent)previousContent.onclick=function(){if(currentIndex>0){A.ui.selectedBlock[id]=flat[currentIndex-1].block.id;A.courseView(id);}};
+    var nextContent=document.getElementById('nextContent');if(nextContent)nextContent.onclick=function(){if(flat[currentIndex+1]){A.ui.selectedBlock[id]=flat[currentIndex+1].block.id;A.courseView(id);}};
     var loadPractice=document.getElementById('loadPractice');
     if(loadPractice)loadPractice.onclick=async function(){A.ui.practice=A.ui.practice||{};A.ui.practice[id]={loading:true};A.courseView(id);try{var q=await A.rpc('aula_get_practice_question',{p_course_id:id,p_seed:String(Date.now())});A.ui.practice[id]={question:q,checked:false,selected:null,correct:false};}catch(err){A.ui.practice[id]={error:A.errorText(err)};}A.courseView(id);};
     document.querySelectorAll('[data-practice-option]').forEach(function(b){b.onclick=async function(){var p=A.ui.practice[id];if(!p||p.checked)return;var oi=Number(b.getAttribute('data-practice-option'));p.selected=oi;try{var r=await A.rpc('aula_check_practice_answer',{p_course_id:id,p_question_id:p.question.id,p_option_index:oi});p.correct=!!r.correct;p.checked=true;}catch(err){p.error=A.errorText(err);}A.courseView(id);};});
 
+    var continueAfterPractice=document.getElementById('continueAfterPractice');if(continueAfterPractice)continueAfterPractice.onclick=function(){var p=A.ui.practice&&A.ui.practice[id];if(p&&p.nextBlock){A.ui.selectedBlock[id]=p.nextBlock;delete A.ui.practice[id];A.courseView(id);}};
     var launch=document.getElementById('launchExam');if(launch)launch.onclick=function(){A.ui.examCourse=id;A.ui.lastExam=null;A.courseView(id);};
     var form=document.getElementById('examForm');if(form)form.onsubmit=async function(e){e.preventDefault();var answers={};c.questions.forEach(function(q){var p=form.querySelector('input[name="'+q.id+'"]:checked');if(p)answers[q.id]=Number(p.value);});var btn=document.getElementById('submitExam');btn.disabled=true;btn.textContent='Calificando…';try{var res=await A.rpc('aula_submit_exam',{p_course_id:id,p_answers:answers});A.ui.lastExam={courseId:id,score:res.score,passed:res.passed,code:res.code||null};if(res.passed&&res.code&&!A.cert(uid,id))A.state.certificates.push({id:A.uid('cert'),code:res.code,user_id:uid,course_id:id,score:res.score,issued_at:new Date().toISOString()});A.courseView(id);}catch(err){A.toast(A.errorText(err));btn.disabled=false;btn.textContent='Enviar evaluación';}};
     var retry=document.getElementById('retryExam');if(retry)retry.onclick=function(){A.ui.lastExam=null;A.courseView(id);};
