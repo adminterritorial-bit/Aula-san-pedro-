@@ -90,7 +90,7 @@ linear-gradient(135deg,#eef4ff 0%,#ffffff 55%,#f7f9fc 100%)!important}
   --shadow:0 20px 55px rgba(15,40,74,.10);
   --aula-photo-background:
     linear-gradient(180deg,rgba(245,247,251,.46),rgba(245,247,251,.62)),
-    url('/brand/fondo.jpg') center center / cover fixed no-repeat;
+    linear-gradient(180deg,#f7faff,#f3f6fb);
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -6685,7 +6685,7 @@ h1,h2,h3,h4{color:#173b69}
 }
 
 
-/* === AULA EI PREMIUM PARITY LAYER === */
+/* === AULA SAN PEDRO PREMIUM PARITY LAYER === */
 
 /* Neutraliza fondos/branding del origen y conserva el sistema visual */
 :root{
