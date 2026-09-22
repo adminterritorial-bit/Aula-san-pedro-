@@ -141,7 +141,7 @@
           '<div class="home-hero-actions"><a class="home-yellow-button pushable" href="#/catalog">'+A.icon('play',17)+' Continuar aprendiendo</a>' +
           (A.canManage()?'<a class="home-glass-button pushable" href="#/studio">' + A.icon('shield',18) + ' Gestión Aula</a>':'') + '</div>' +
         '</div>' +
-        '<div class="hero-radial-progress" style="--progress:'+avg+'"><div><strong>'+avg+'%</strong><span>avance promedio</span></div></div>' +
+        '<div class="hero-radial-progress" style="--progress:'+avg+'%;"><div><strong>'+avg+'%</strong><span>avance promedio</span></div></div>' +
       '</section>' +
 
       '<section class="home-metric-grid animated-kpis">' +
