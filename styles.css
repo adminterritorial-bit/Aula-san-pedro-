@@ -8263,9 +8263,8 @@ button,.pushable,.primary-button,.secondary-button,a.home-yellow-button,a.catalo
 @keyframes cometFly{to{transform:translate(1300px,-540px) rotate(-28deg);opacity:.15}}
 .cinematic-hero h1 em{font-style:normal;color:#ffd21c;text-shadow:0 6px 22px rgba(255,210,28,.18)}
 .hero-radial-progress{
-  --p:calc(var(--progress)*1%);
   width:152px;height:152px;border-radius:50%;display:grid;place-items:center;flex:none;
-  background:conic-gradient(#ffd21c var(--p),rgba(255,255,255,.12) 0);
+  background:conic-gradient(#ffd21c var(--progress),rgba(255,255,255,.12) 0);
   padding:9px;box-shadow:0 22px 48px rgba(1,26,61,.25);
   animation:radialPop .7s var(--spring) both
 }
