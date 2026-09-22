@@ -8,6 +8,8 @@
       items += '<button data-tab="users" class="' + (A.ui.tab === 'users' ? 'active' : '') + '">' + A.icon('briefcase',17) + '<span>Usuarios y roles</span></button>';
       items += '<button data-tab="compliance" class="' + (A.ui.tab === 'compliance' ? 'active' : '') + '">' + A.icon('shield',17) + '<span>Cumplimiento</span></button>';
       items += '<button data-tab="certificates" class="' + (A.ui.tab === 'certificates' ? 'active' : '') + '">' + A.icon('trophy',17) + '<span>Certificados</span></button>';
+      items += '<button data-tab="analytics" class="' + (A.ui.tab === 'analytics' ? 'active' : '') + '">' + A.icon('chart',17) + '<span>Analítica</span></button>';
+      items += '<button data-tab="communications" class="' + (A.ui.tab === 'communications' ? 'active' : '') + '">' + A.icon('message',17) + '<span>Comunicaciones</span></button>';
     }
     return '<div class="tab-bar integrated-tab-bar">' + items + '</div>';
   }
@@ -252,6 +254,49 @@
       (detail?'<section class="panel-card certificate-detail-panel"><div class="section-title-row"><div><span class="eyebrow">Detalle del certificado</span><h3>'+A.escape(detail.code)+'</h3></div><button id="closeCertDetail" class="secondary-button compact">Cerrar</button></div><div class="user-detail-metrics"><article><span>Persona</span><strong>'+A.escape((A.user(detail.user_id)||{}).full_name||'Usuario')+'</strong></article><article><span>Capacitación</span><strong>'+A.escape((A.course(detail.course_id)||{}).title||'Capacitación')+'</strong></article><article><span>Puntaje</span><strong>'+detail.score+'%</strong></article><article><span>Emisión</span><strong>'+new Date(detail.issued_at).toLocaleDateString('es-CO')+'</strong></article></div><a class="primary-button" href="#/certificate/'+encodeURIComponent(detail.code)+'">Abrir certificado oficial</a></section>':'')+'</div>';
   }
 
+  function analyticsPanel() {
+    var data=A.analytics;
+    if(!data) return '<section class="panel-card analytics-loading"><span class="spin">'+A.icon('refresh',26)+'</span><h2>Preparando analítica…</h2><p>Consolidando usuarios, cursos, certificaciones y resultados.</p></section>';
+    var s=data.summary||{}, courses=data.courses||[], positions=data.positions||[];
+    var maxAssigned=Math.max.apply(null,[1].concat(courses.map(function(x){return Number(x.assigned||0);})));
+    var maxPeople=Math.max.apply(null,[1].concat(positions.map(function(x){return Number(x.people||0);})));
+    return '<div class="analytics-center">' +
+      '<section class="analytics-hero panel-card"><div><span class="eyebrow">'+A.icon('chart',15)+' Inteligencia de formación</span><h2>Aprendizaje medible, no solo capacitaciones.</h2><p>Visualiza adopción, cumplimiento, resultados y distribución de la formación institucional.</p></div><div class="analytics-pulse"><span></span><strong>'+Number(s.pass_rate||0)+'%</strong><small>tasa de aprobación</small></div></section>' +
+      '<section class="analytics-summary-grid">' +
+        '<article><span>'+A.icon('briefcase',20)+'</span><div><small>Usuarios activos</small><strong>'+Number(s.active_users||0)+'</strong></div></article>' +
+        '<article><span>'+A.icon('book',20)+'</span><div><small>Cursos publicados</small><strong>'+Number(s.published_courses||0)+'</strong></div></article>' +
+        '<article><span>'+A.icon('target',20)+'</span><div><small>Asignaciones</small><strong>'+Number(s.assignments||0)+'</strong></div></article>' +
+        '<article class="warning"><span>'+A.icon('clock',20)+'</span><div><small>Vencidas</small><strong>'+Number(s.overdue||0)+'</strong></div></article>' +
+        '<article><span>'+A.icon('trophy',20)+'</span><div><small>Certificados</small><strong>'+Number(s.certificates||0)+'</strong></div></article>' +
+        '<article><span>'+A.icon('chart',20)+'</span><div><small>Nota promedio</small><strong>'+Number(s.avg_score||0)+'%</strong></div></article>' +
+      '</section>' +
+      '<section class="analytics-grid-two">' +
+        '<article class="panel-card analytics-chart-card"><header><div><span class="eyebrow">Rendimiento por curso</span><h3>Asignación vs. certificación</h3></div></header><div class="analytics-bars">'+
+          (courses.length?courses.slice(0,10).map(function(x,i){var assigned=Number(x.assigned||0),cert=Number(x.certified||0),width=Math.max(4,Math.round(assigned/maxAssigned*100));return '<div class="analytics-bar-row" style="--row-delay:'+(i*55)+'ms"><div><strong>'+A.escape(x.title)+'</strong><small>'+assigned+' asignados · '+cert+' certificados · nota '+Number(x.avg_score||0)+'%</small></div><div class="analytics-bar-track"><span style="width:'+width+'%"><i style="width:'+Math.min(100,Number(x.completion_rate||0))+'%"></i></span></div><b>'+Number(x.completion_rate||0)+'%</b></div>';}).join(''):'<div class="demo-empty-mini">Aún no hay datos suficientes.</div>')+
+        '</div></article>' +
+        '<article class="panel-card analytics-chart-card"><header><div><span class="eyebrow">Distribución por cargo</span><h3>Personas y evidencias</h3></div></header><div class="analytics-position-list">'+
+          (positions.length?positions.slice(0,10).map(function(x,i){return '<div class="position-analytics-row" style="--row-delay:'+(i*55)+'ms"><span class="position-analytics-icon">'+A.icon('briefcase',16)+'</span><div><strong>'+A.escape(x.position)+'</strong><small>'+Number(x.assignments||0)+' asignaciones · '+Number(x.certificates||0)+' certificados</small><div><span style="width:'+Math.round(Number(x.people||0)/maxPeople*100)+'%"></span></div></div><b>'+Number(x.people||0)+'</b></div>';}).join(''):'<div class="demo-empty-mini">Asigna cargos para ver esta distribución.</div>')+
+        '</div></article>' +
+      '</section>' +
+      '<section class="panel-card analytics-insight-card"><span class="analytics-insight-icon">'+A.icon('brain',22)+'</span><div><span class="eyebrow">Lectura ejecutiva</span><h3>Qué mirar primero</h3><p>'+Number(s.overdue||0)+' obligaciones vencidas, '+Number(s.certificates||0)+' certificados emitidos y una tasa de aprobación de '+Number(s.pass_rate||0)+'%. Usa estos datos para priorizar acompañamiento, contenido y recertificación.</p></div></section>' +
+    '</div>';
+  }
+
+  function communicationsPanel() {
+    var events=A.adminEvents||[];
+    var roleOptions=['','colaborador','creador_contenido','revisor','admin','super_admin'];
+    return '<div class="communications-center">' +
+      '<section class="communications-hero panel-card"><div><span class="eyebrow">'+A.icon('send',15)+' Comunicaciones</span><h2>Activa la formación en el momento correcto.</h2><p>Publica anuncios, agenda sesiones y concentra fechas importantes sin depender de canales externos.</p></div><span class="communication-orbit">'+A.icon('bell',24)+'</span></section>' +
+      '<div class="communications-grid">' +
+        '<section class="panel-card communication-form-card"><div class="section-title-row"><div><span class="eyebrow">Anuncio</span><h3>Enviar notificación</h3><p>Se entrega dentro del Centro de actividad de cada usuario.</p></div></div><form id="announcementForm" class="demo-inline-form communication-form"><label>Título<input name="title" maxlength="140" required placeholder="Nueva jornada de formación"></label><label class="span-2">Mensaje<textarea name="body" required placeholder="Escribe un mensaje claro y accionable."></textarea></label><label>Audiencia<select name="role">'+roleOptions.map(function(r){return '<option value="'+r+'">'+(r?roleLabel(r):'Todas las cuentas activas')+'</option>';}).join('')+'</select></label><label>Acción<select name="action"><option value="">Sin acción</option><option value="#/catalog">Mis capacitaciones</option><option value="#/games">Juegos</option><option value="#/studio">Gestión Aula</option></select></label><button class="primary-button span-2">'+A.icon('send',16)+' Enviar anuncio</button></form></section>' +
+        '<section class="panel-card communication-form-card"><div class="section-title-row"><div><span class="eyebrow">Agenda</span><h3>Crear evento</h3><p>Sesiones, campañas y hitos aparecen en la agenda del usuario.</p></div></div><form id="eventForm" class="demo-inline-form communication-form"><label>Título<input name="title" required placeholder="Sesión de inducción"></label><label>Tipo<select name="kind"><option value="event">Evento</option><option value="live">Sesión en vivo</option><option value="campaign">Campaña</option><option value="deadline">Hito / fecha límite</option></select></label><label>Inicio<input name="starts_at" type="datetime-local" required></label><label>Fin<input name="ends_at" type="datetime-local"></label><label>Audiencia<select name="audience_role">'+roleOptions.map(function(r){return '<option value="'+r+'">'+(r?roleLabel(r):'Todos los roles')+'</option>';}).join('')+'</select></label><label>Capacitación<select name="course_id"><option value="">Sin curso asociado</option>'+A.state.courses.filter(function(x){return x.status==='published';}).map(function(x){return '<option value="'+A.escape(x.id)+'">'+A.escape(x.title)+'</option>';}).join('')+'</select></label><label class="span-2">Descripción<textarea name="description" placeholder="Qué debe saber o preparar el usuario."></textarea></label><button class="primary-button span-2">'+A.icon('calendar',16)+' Guardar evento</button></form></section>' +
+      '</div>' +
+      '<section class="panel-card event-management-card"><div class="section-title-row"><div><span class="eyebrow">Calendario institucional</span><h3>Eventos configurados</h3></div><span class="permission-chip">'+events.length+' registros</span></div><div class="admin-event-list">'+
+        (events.length?events.slice(0,30).map(function(ev){var date=new Date(ev.starts_at);return '<article class="'+(ev.is_active?'':'inactive')+'"><div class="admin-event-date"><strong>'+date.toLocaleDateString('es-CO',{day:'2-digit'})+'</strong><span>'+date.toLocaleDateString('es-CO',{month:'short'}).replace('.','').toUpperCase()+'</span></div><div><span class="eyebrow">'+A.escape(ev.kind||'event')+'</span><h4>'+A.escape(ev.title)+'</h4><p>'+A.escape(ev.description||'Sin descripción')+'</p><small>'+(ev.audience_role?'Rol: '+A.escape(roleLabel(ev.audience_role)):'Todos los roles')+(ev.audience_position_name?' · '+A.escape(ev.audience_position_name):'')+'</small></div><button class="secondary-button compact toggle-event" data-event-id="'+A.escape(ev.id)+'">'+(ev.is_active?'Desactivar':'Activar')+'</button></article>';}).join(''):'<div class="demo-empty-mini">Aún no has creado eventos.</div>')+
+      '</div></section>' +
+    '</div>';
+  }
+
   function bind() {
     document.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { A.ui.tab = b.getAttribute('data-tab'); A.ui.selectedCourse = null; A.studio(); }; });
     document.querySelectorAll('.edit-course').forEach(function (b) { b.onclick = function () { A.ui.selectedCourse = b.getAttribute('data-id'); A.studio(); }; });
@@ -452,6 +497,10 @@
     var cps=document.getElementById('competencyPositionSelect');if(cps)cps.onchange=function(){A.ui.selectedPosition=cps.value;A.studio();};
     var cs=document.getElementById('complianceSearch');if(cs)cs.oninput=function(){A.ui.complianceQuery=cs.value;A.studio();};
 
+    var announcementForm=document.getElementById('announcementForm');if(announcementForm)announcementForm.onsubmit=async function(e){e.preventDefault();var f=new FormData(announcementForm),btn=announcementForm.querySelector('button[type=submit]');btn.disabled=true;try{var r=await A.rpc('aula_admin_send_announcement',{p_title:String(f.get('title')),p_body:String(f.get('body')),p_action_hash:String(f.get('action')||'')||null,p_role:String(f.get('role')||'')||null});A.toast('Anuncio enviado a '+Number(r.count||0)+' usuarios.');announcementForm.reset();await A.refresh();A.studio();}catch(err){A.toast(A.errorText(err));btn.disabled=false;}};
+    var eventForm=document.getElementById('eventForm');if(eventForm)eventForm.onsubmit=async function(e){e.preventDefault();var f=new FormData(eventForm),btn=eventForm.querySelector('button[type=submit]');btn.disabled=true;try{await A.rpc('aula_admin_save_event',{p_item:{title:String(f.get('title')),description:String(f.get('description')||''),starts_at:new Date(String(f.get('starts_at'))).toISOString(),ends_at:f.get('ends_at')?new Date(String(f.get('ends_at'))).toISOString():null,kind:String(f.get('kind')),course_id:String(f.get('course_id')||'')||null,audience_role:String(f.get('audience_role')||'')||null,is_active:true}});A.toast('Evento guardado.');eventForm.reset();A.adminEvents=await A.rpc('aula_admin_events');await A.refresh();A.studio();}catch(err){A.toast(A.errorText(err));btn.disabled=false;}};
+    document.querySelectorAll('.toggle-event').forEach(function(b){b.onclick=async function(){var id=b.getAttribute('data-event-id'),ev=(A.adminEvents||[]).find(function(x){return x.id===id;});if(!ev)return;b.disabled=true;try{await A.rpc('aula_admin_save_event',{p_item:{id:ev.id,title:ev.title,description:ev.description||'',starts_at:ev.starts_at,ends_at:ev.ends_at,kind:ev.kind,course_id:ev.course_id,audience_role:ev.audience_role,audience_position_id:ev.audience_position_id,is_active:!ev.is_active}});A.adminEvents=await A.rpc('aula_admin_events');A.toast(ev.is_active?'Evento desactivado.':'Evento activado.');A.studio();}catch(err){A.toast(A.errorText(err));b.disabled=false;}};});
+
     var certSearch=document.getElementById('certSearch');if(certSearch)certSearch.oninput=function(){A.ui.certSearch=certSearch.value;A.studio();};
     var certCourse=document.getElementById('certCourse');if(certCourse)certCourse.onchange=function(){A.ui.certCourse=certCourse.value;A.studio();};
     var certScore=document.getElementById('certScore');if(certScore){certScore.value=A.ui.certScore;certScore.onchange=function(){A.ui.certScore=certScore.value;A.studio();};}
@@ -467,7 +516,13 @@
     if (!A.canManage()) { location.hash = '#/'; return; }
     if (!A.canManageUsers() && A.ui.tab !== 'courses') A.ui.tab = 'courses';
 
-    var body = A.ui.tab === 'courses' ? coursePanel() : A.ui.tab === 'assignments' ? assignmentsPanel() : A.ui.tab === 'users' ? usersPanel() : A.ui.tab === 'compliance' ? compliancePanel() : certificatesPanel();
+    var body = A.ui.tab === 'courses' ? coursePanel()
+      : A.ui.tab === 'assignments' ? assignmentsPanel()
+      : A.ui.tab === 'users' ? usersPanel()
+      : A.ui.tab === 'compliance' ? compliancePanel()
+      : A.ui.tab === 'certificates' ? certificatesPanel()
+      : A.ui.tab === 'analytics' ? analyticsPanel()
+      : communicationsPanel();
     var published=A.state.courses.filter(function(x){return x.status==='published';}).length;
     var activeUsers=A.state.users.filter(function(x){return x.is_active;}).length;
     var activeAssignments=A.state.assignments.length;
@@ -503,6 +558,8 @@
       try{
         await A.refresh();
         if(A.ui.tab==='compliance') await A.loadTrainingAdmin(true);
+        if(A.ui.tab==='analytics') await A.loadAnalytics(true);
+        if(A.ui.tab==='communications') A.adminEvents=await A.rpc('aula_admin_events');
         A.toast('Gestión Aula actualizada.');
         A.studio();
       }catch(err){
@@ -515,6 +572,14 @@
     if (A.ui.tab === 'compliance' && !A.trainingAdmin && !A.ui.trainingAdminLoading) {
       A.ui.trainingAdminLoading = true;
       A.loadTrainingAdmin().then(function(){ A.ui.trainingAdminLoading=false; if(A.ui.tab==='compliance')A.studio(); }).catch(function(err){ A.ui.trainingAdminLoading=false; A.toast(A.errorText(err)); });
+    }
+    if (A.ui.tab === 'analytics' && !A.analytics && !A.ui.analyticsLoading) {
+      A.ui.analyticsLoading=true;
+      A.loadAnalytics().then(function(){A.ui.analyticsLoading=false;if(A.ui.tab==='analytics')A.studio();}).catch(function(err){A.ui.analyticsLoading=false;A.toast(A.errorText(err));});
+    }
+    if (A.ui.tab === 'communications' && !A.adminEvents && !A.ui.eventsLoading) {
+      A.ui.eventsLoading=true;
+      A.rpc('aula_admin_events').then(function(data){A.adminEvents=data||[];A.ui.eventsLoading=false;if(A.ui.tab==='communications')A.studio();}).catch(function(err){A.ui.eventsLoading=false;A.toast(A.errorText(err));});
     }
   };
 })(window);
