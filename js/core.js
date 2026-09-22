@@ -7,6 +7,20 @@
     email = String(email || '').trim().toLowerCase();
     return email.endsWith('@' + A.INSTITUTIONAL_DOMAIN) && email.split('@').length === 2;
   };
+  A.googleProviderEnabled = null;
+  A.checkGoogleProvider = async function () {
+    try {
+      var cfg = w.AulaSupabaseConfig || {};
+      if (!cfg.url || !cfg.key) return null;
+      var response = await fetch(cfg.url + '/auth/v1/settings', { headers: { apikey: cfg.key } });
+      if (!response.ok) return null;
+      var settings = await response.json();
+      A.googleProviderEnabled = !!(settings && settings.external && settings.external.google);
+      return A.googleProviderEnabled;
+    } catch (_) {
+      return null;
+    }
+  };
   A.session = null;
   A.profile = null;
   A.state = { users: [], courses: [], assignments: [], progress: {}, certificates: [], activity: [] };
@@ -105,10 +119,27 @@
       '<small class="demo-muted">El acceso externo al dominio institucional está bloqueado también en la base de datos.</small></div></section></main>';
 
     var googleBtn = document.getElementById('googleLoginBtn');
+    var googleMessage = document.getElementById('googleLoginMessage');
+
+    A.checkGoogleProvider().then(function (enabled) {
+      if (enabled === false) {
+        googleBtn.disabled = true;
+        googleBtn.classList.add('provider-disabled');
+        googleBtn.querySelector('span:last-child').textContent = 'Google pendiente de habilitar en Supabase';
+        googleMessage.style.display = 'block';
+        googleMessage.textContent = 'El proveedor Google está deshabilitado en Supabase Auth. El Aula ya está preparada; falta activarlo en Authentication → Sign In / Providers.';
+      }
+    });
+
     googleBtn.onclick = async function () {
-      var m = document.getElementById('googleLoginMessage');
-      m.style.display = 'none'; googleBtn.disabled = true; googleBtn.classList.add('loading'); googleBtn.querySelector('span:last-child').textContent = 'Conectando con Google…';
+      var m = googleMessage;
+      m.style.display = 'none';
+      googleBtn.disabled = true;
+      googleBtn.classList.add('loading');
+      googleBtn.querySelector('span:last-child').textContent = 'Conectando con Google…';
       try {
+        var enabled = await A.checkGoogleProvider();
+        if (enabled === false) throw new Error('Google todavía está deshabilitado en Supabase Auth.');
         var result = await A.sb.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -118,8 +149,11 @@
         });
         if (result.error) throw result.error;
       } catch (err) {
-        googleBtn.disabled = false; googleBtn.classList.remove('loading'); googleBtn.querySelector('span:last-child').textContent = 'Continuar con Google';
-        m.style.display = 'block'; m.textContent = A.errorText(err, 'No fue posible iniciar con Google.');
+        googleBtn.disabled = false;
+        googleBtn.classList.remove('loading');
+        googleBtn.querySelector('span:last-child').textContent = 'Continuar con Google';
+        m.style.display = 'block';
+        m.textContent = A.errorText(err, 'No fue posible iniciar con Google.');
       }
     };
 
