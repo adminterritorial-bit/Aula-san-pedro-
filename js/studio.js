@@ -135,21 +135,60 @@
     A.ui.userRoleFilter=A.ui.userRoleFilter||'all';
     A.ui.userStateFilter=A.ui.userStateFilter||'all';
     A.ui.selectedUsers=A.ui.selectedUsers||[];
+
     var selected=new Set(A.ui.selectedUsers);
     var q=A.ui.userSearch.toLowerCase();
+    var actorRole=A.profile.role;
+    var actorRank=actorRole==='super_admin'?50:40;
+    var rank={colaborador:10,creador_contenido:20,revisor:30,admin:40,super_admin:50};
     var filtered=A.state.users.filter(function(u){
       var r=A.ui.userRoleFilter==='all'||u.role===A.ui.userRoleFilter;
-      var s=A.ui.userStateFilter==='all'||(A.ui.userStateFilter==='active'?u.is_active:!u.is_active);
+      var st=A.ui.userStateFilter==='all'||(A.ui.userStateFilter==='active'?u.is_active:!u.is_active);
       var t=(u.full_name+' '+u.email).toLowerCase();
-      return r&&s&&(!q||t.indexOf(q)>=0);
+      return r&&st&&(!q||t.indexOf(q)>=0);
     });
-    var allowed=A.isSuperAdmin()?['colaborador','creador_contenido','revisor','admin','super_admin']:['colaborador','creador_contenido','revisor'];
+    var allowed=actorRole==='super_admin'?['colaborador','creador_contenido','revisor','admin','super_admin']:['colaborador','creador_contenido','revisor'];
     var allRoles=['colaborador','creador_contenido','revisor','admin','super_admin'];
     var detail=A.ui.userDetail?A.user(A.ui.userDetail):null;
+    var credential=A.ui.tempCredential||null;
 
-    return '<div class="users-manager-pro users-center"><section class="panel-card"><div class="section-title-row"><div><span class="eyebrow">Usuarios y roles</span><h2>Administra cuentas sin perder el contexto.</h2><p>'+A.state.users.filter(function(u){return u.is_active;}).length+' activas de '+A.state.users.length+' membresías.</p></div><button id="exportUsers" class="secondary-button">Exportar CSV</button></div><div class="manager-toolbar three"><div class="search-field"><span>⌕</span><input id="userSearch" placeholder="Buscar usuario…" value="'+A.escape(A.ui.userSearch)+'"></div><select id="userRoleFilter"><option value="all">Todos los roles</option>'+allRoles.map(function(r){return '<option value="'+r+'" '+(A.ui.userRoleFilter===r?'selected':'')+'>'+roleLabel(r)+'</option>';}).join('')+'</select><select id="userStateFilter"><option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Inactivos</option></select></div><div class="bulk-buttons"><button id="selectFilteredMembers" class="secondary-button">Seleccionar todos los filtrados</button><button id="clearMemberSelection" class="secondary-button">Limpiar selección</button><button id="bulkReactivate" class="secondary-button" '+(!selected.size?'disabled':'')+'>Reactivar</button><button id="bulkDeactivate" class="danger-button" '+(!selected.size?'disabled':'')+'>Desactivar</button><span>'+selected.size+' seleccionados</span></div><div class="demo-table-wrap"><table class="demo-table"><thead><tr><th></th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Administración</th></tr></thead><tbody>'+filtered.map(function(u){var self=u.id===A.currentUid(),canRole=A.isSuperAdmin()&&!self;var actorRank=A.profile.role==='super_admin'?50:40,targetRank={colaborador:10,creador_contenido:20,revisor:30,admin:40,super_admin:50}[u.role]||10,canToggle=!self&&actorRank>targetRank;return '<tr><td><input class="member-check" type="checkbox" value="'+u.id+'" '+(selected.has(u.id)?'checked':'')+' '+(self?'disabled':'')+'></td><td><button class="user-detail-link" data-user-detail="'+u.id+'"><b>'+A.escape(u.full_name)+'</b><small>'+A.escape(u.email)+'</small></button></td><td><select class="role-change" data-id="'+u.id+'" '+(canRole?'':'disabled')+'>'+allRoles.map(function(r){return '<option value="'+r+'" '+(r===u.role?'selected':'')+'>'+roleLabel(r)+'</option>';}).join('')+'</select></td><td><span class="demo-chip '+(u.is_active?'success':'warning')+'">'+(u.is_active?'Activo':'Inactivo')+'</span></td><td>'+(canToggle?'<button class="'+(u.is_active?'danger-button':'secondary-button')+' toggle-user compact" data-id="'+u.id+'">'+(u.is_active?'Desactivar':'Reactivar')+'</button>':'<small>Protegido</small>')+'</td></tr>';}).join('')+'</tbody></table></div></section>' +
-      '<section class="panel-card"><div class="section-title-row"><div><span class="eyebrow">Nuevo usuario</span><h3>Crear o vincular acceso</h3><p>Primero se reutiliza Auth; si no existe, se crea con contraseña temporal.</p></div></div><form id="newUserForm" class="demo-inline-form"><label>Nombre completo<input name="name" required></label><label>Correo institucional<input name="email" type="email" placeholder="usuario@sanpedro-valle.gov.co" required></label><label>Rol inicial<select name="role">'+allowed.map(function(r){return '<option value="'+r+'">'+roleLabel(r)+'</option>';}).join('')+'</select></label><div><button class="primary-button" id="createUserBtn">Vincular / crear</button></div></form></section>' +
-      (detail?'<section class="panel-card user-detail-panel"><div class="section-title-row"><div><span class="eyebrow">Detalle del usuario</span><h3>'+A.escape(detail.full_name)+'</h3><p>'+A.escape(detail.email)+'</p></div><button id="closeUserDetail" class="secondary-button compact">Cerrar</button></div><div class="user-detail-metrics"><article><span>Matrículas</span><strong>'+A.state.assignments.filter(function(a){return a.user_id===detail.id;}).length+'</strong></article><article><span>Certificados</span><strong>'+A.state.certificates.filter(function(x){return x.user_id===detail.id;}).length+'</strong></article><article><span>Rol</span><strong>'+A.escape(roleLabel(detail.role))+'</strong></article><article><span>Cuenta</span><strong>'+(detail.is_active?'Activa':'Inactiva')+'</strong></article></div><div class="assignment-list">'+A.state.assignments.filter(function(a){return a.user_id===detail.id;}).slice(0,8).map(function(a){var co=A.course(a.course_id);return '<article class="assignment-card"><div><b>'+A.escape(co?co.title:'Capacitación')+'</b><span>'+A.percent(detail.id,co||{id:a.course_id,phases:[]})+'% completado</span></div></article>';}).join('')+'</div></section>':'')+'</div>';
+    function canManage(u){
+      if(!u||u.id===A.currentUid()) return false;
+      if(actorRole==='super_admin') return true;
+      return actorRole==='admin' && (rank[u.role]||10)<40;
+    }
+
+    var credentialCard=credential?'<section class="panel-card credential-reveal-card"><div class="credential-reveal-icon">'+A.icon('shield',22)+'</div><div><span class="eyebrow">Credencial temporal</span><h3>'+A.escape(credential.email||'Usuario creado')+'</h3><p>Esta contraseña se muestra únicamente en esta sesión administrativa. Entrégala por un canal seguro.</p><code>'+A.escape(credential.password)+'</code></div><div class="credential-reveal-actions"><button type="button" id="copyCredential" class="primary-button">'+A.icon('filecheck',16)+' Copiar contraseña</button><button type="button" id="dismissCredential" class="secondary-button">Ocultar</button></div></section>':'';
+
+    return '<div class="users-manager-pro users-center">'+credentialCard+
+      '<section class="panel-card users-command-center"><div class="section-title-row"><div><span class="eyebrow">Usuarios y roles</span><h2>Control de acceso del Aula.</h2><p>'+A.state.users.filter(function(u){return u.is_active;}).length+' activas de '+A.state.users.length+' membresías · Tu rol: '+A.escape(roleLabel(actorRole))+'.</p></div><button id="exportUsers" class="secondary-button">'+A.icon('filecheck',16)+' Exportar CSV</button></div>'+
+      '<div class="user-admin-notice">'+A.icon('shield',18)+'<div><strong>Jerarquía protegida</strong><span>Admin administra roles inferiores. Super Admin controla administradores, contraseñas y eliminación Auth segura.</span></div></div>'+
+      '<div class="manager-toolbar three"><div class="search-field"><span>'+A.icon('search',17)+'</span><input id="userSearch" placeholder="Buscar usuario…" value="'+A.escape(A.ui.userSearch)+'"></div><select id="userRoleFilter"><option value="all">Todos los roles</option>'+allRoles.map(function(r){return '<option value="'+r+'" '+(A.ui.userRoleFilter===r?'selected':'')+'>'+roleLabel(r)+'</option>';}).join('')+'</select><select id="userStateFilter"><option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Inactivos</option></select></div>'+
+      '<div class="bulk-buttons"><button id="selectFilteredMembers" class="secondary-button">Seleccionar filtrados</button><button id="clearMemberSelection" class="secondary-button">Limpiar</button><button id="bulkReactivate" class="secondary-button" '+(!selected.size?'disabled':'')+'>Reactivar</button><button id="bulkDeactivate" class="danger-button" '+(!selected.size?'disabled':'')+'>Desactivar</button><span>'+selected.size+' seleccionados</span></div>'+
+      '<div class="demo-table-wrap"><table class="demo-table"><thead><tr><th></th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Administración</th></tr></thead><tbody>'+filtered.map(function(u){
+        var self=u.id===A.currentUid(),manageable=canManage(u),options=actorRole==='super_admin'?allRoles:allowed;
+        return '<tr><td><input class="member-check" type="checkbox" value="'+u.id+'" '+(selected.has(u.id)?'checked':'')+' '+(!manageable?'disabled':'')+'></td>'+
+          '<td><button class="user-detail-link" data-user-detail="'+u.id+'"><b>'+A.escape(u.full_name)+'</b><small>'+A.escape(u.email)+'</small></button></td>'+
+          '<td><select class="role-change" data-id="'+u.id+'" '+(manageable?'':'disabled')+'>'+options.map(function(r){return '<option value="'+r+'" '+(r===u.role?'selected':'')+'>'+roleLabel(r)+'</option>';}).join('')+'</select></td>'+
+          '<td><span class="demo-chip '+(u.is_active?'success':'warning')+'">'+(u.is_active?'Activo':'Inactivo')+'</span></td>'+
+          '<td>'+(manageable?'<div class="user-row-actions"><button class="secondary-button compact user-detail-action" data-user-detail="'+u.id+'">Gestionar</button><button class="'+(u.is_active?'danger-button':'secondary-button')+' toggle-user compact" data-id="'+u.id+'">'+(u.is_active?'Desactivar':'Reactivar')+'</button></div>':self?'<small>Tu cuenta</small>':'<small>Protegido por jerarquía</small>')+'</td></tr>';
+      }).join('')+'</tbody></table></div></section>' +
+
+      '<section class="panel-card create-user-card"><div class="section-title-row"><div><span class="eyebrow">Alta institucional</span><h3>Crear o vincular usuario</h3><p>Si la cuenta ya existe en Auth se vincula al Aula; de lo contrario se crea con credencial temporal segura.</p></div><span class="permission-chip">'+A.icon('shield',14)+' '+A.escape(roleLabel(actorRole))+'</span></div><form id="newUserForm" class="demo-inline-form"><label>Nombre completo<input name="name" required></label><label>Correo institucional<input name="email" type="email" placeholder="usuario@sanpedro-valle.gov.co" required></label><label>Rol inicial<select name="role">'+allowed.map(function(r){return '<option value="'+r+'">'+roleLabel(r)+'</option>';}).join('')+'</select></label><div><button class="primary-button" id="createUserBtn">'+A.icon('briefcase',16)+' Vincular / crear</button></div></form></section>' +
+
+      (detail?(function(){
+        var manageable=canManage(detail),self=detail.id===A.currentUid(),isSuper=actorRole==='super_admin';
+        var detailRoles=actorRole==='super_admin'?allRoles:allowed;
+        return '<section class="panel-card user-detail-panel admin-user-console"><div class="section-title-row"><div><span class="eyebrow">Consola de usuario</span><h3>'+A.escape(detail.full_name)+'</h3><p>'+A.escape(detail.email)+'</p></div><button id="closeUserDetail" class="secondary-button compact">Cerrar</button></div>'+
+          '<div class="user-detail-metrics"><article><span>Matrículas</span><strong>'+A.state.assignments.filter(function(a){return a.user_id===detail.id;}).length+'</strong></article><article><span>Certificados</span><strong>'+A.state.certificates.filter(function(x){return x.user_id===detail.id;}).length+'</strong></article><article><span>Rol</span><strong>'+A.escape(roleLabel(detail.role))+'</strong></article><article><span>Cuenta</span><strong>'+(detail.is_active?'Activa':'Inactiva')+'</strong></article></div>'+
+          (manageable?'<div class="user-security-console">'+
+            '<form id="editUserProfileForm" class="user-admin-block"><div><span class="eyebrow">Identidad</span><h4>Perfil y permisos</h4></div><label>Nombre completo<input name="full_name" value="'+A.escape(detail.full_name)+'" required></label><label>Rol<select name="role">'+detailRoles.map(function(r){return '<option value="'+r+'" '+(detail.role===r?'selected':'')+'>'+roleLabel(r)+'</option>';}).join('')+'</select></label><button class="primary-button">Guardar cambios</button></form>'+
+            '<div class="user-admin-block"><div><span class="eyebrow">Acceso al Aula</span><h4>'+(detail.is_active?'Cuenta activa':'Cuenta desactivada')+'</h4><p>La desactivación conserva historial, certificados y la identidad compartida de Supabase.</p></div><button id="detailToggleUser" class="'+(detail.is_active?'danger-button':'secondary-button')+'" data-id="'+detail.id+'">'+(detail.is_active?'Desactivar en Aula':'Reactivar en Aula')+'</button></div>'+
+            (isSuper?'<div class="user-admin-block sensitive"><div><span class="eyebrow">Seguridad · Super Admin</span><h4>Contraseña temporal</h4><p>Solo aplica a cuentas con proveedor de correo. Las cuentas Google administran su contraseña en Workspace.</p></div><button id="resetUserPassword" class="secondary-button" data-id="'+detail.id+'">'+A.icon('refresh',16)+' Restablecer contraseña</button></div>'+
+            '<div class="user-admin-block destructive"><div><span class="eyebrow">Zona crítica</span><h4>Eliminar identidad Auth</h4><p>Solo se permite para cuentas creadas exclusivamente por Aula y sin referencias en otros sistemas municipales.</p></div><button id="deleteUserAuth" class="danger-button" data-id="'+detail.id+'" data-email="'+A.escape(detail.email)+'">Eliminar cuenta definitivamente</button></div>':'')+
+          '</div>':'<div class="user-protected-card">'+A.icon('shield',20)+'<div><strong>'+(self?'Esta es tu cuenta':'Usuario protegido por jerarquía')+'</strong><span>'+(self?'Los cambios sensibles sobre tu propia cuenta se realizan fuera de esta consola.':'No tienes nivel suficiente para modificar este usuario.')+'</span></div></div>')+
+          '<div class="user-learning-history"><span class="eyebrow">Formación asignada</span><div class="assignment-list">'+(A.state.assignments.filter(function(a){return a.user_id===detail.id;}).slice(0,8).map(function(a){var co=A.course(a.course_id);return '<article class="assignment-card"><div><b>'+A.escape(co?co.title:'Capacitación')+'</b><span>'+A.percent(detail.id,co||{id:a.course_id,phases:[]})+'% completado</span></div></article>';}).join('')||'<div class="demo-empty-mini">Sin capacitaciones asignadas.</div>')+'</div></div></section>';
+      })():'')+'</div>';
   }
 
   function complianceStateLabel(state) {
@@ -308,12 +347,95 @@
     document.querySelectorAll('[data-user-detail]').forEach(function(b){b.onclick=function(){A.ui.userDetail=b.getAttribute('data-user-detail');A.studio();};});
     var closeUser=document.getElementById('closeUserDetail');if(closeUser)closeUser.onclick=function(){A.ui.userDetail=null;A.studio();};
 
+    var copyCredential=document.getElementById('copyCredential');if(copyCredential)copyCredential.onclick=async function(){var c=A.ui.tempCredential;if(!c)return;try{await navigator.clipboard.writeText(c.password);A.toast('Contraseña copiada.');}catch(_){A.toast('No fue posible copiar automáticamente.');}};
+    var dismissCredential=document.getElementById('dismissCredential');if(dismissCredential)dismissCredential.onclick=function(){A.ui.tempCredential=null;A.studio();};
+
     var uf=document.getElementById('newUserForm');if(uf)uf.onsubmit=async function(e){
-      e.preventDefault();var f=new FormData(uf),name=String(f.get('name')).trim(),email=String(f.get('email')).trim().toLowerCase(),role=String(f.get('role')),btn=document.getElementById('createUserBtn');btn.disabled=true;btn.textContent='Procesando…';
-      try{var linked=await A.rpc('aula_add_existing_user',{p_email:email,p_full_name:name,p_role:role});var user;if(linked&&linked.found){user={id:linked.user_id,full_name:name,email:email,role:role,is_active:true,must_change_password:false};A.toast('Cuenta Auth existente vinculada al Aula.');}else{var created=await A.invoke('aula-create-managed-user',{email:email,full_name:name,role:role});user={id:created.user.id,full_name:name,email:email,role:role,is_active:true,must_change_password:true};alert('Usuario creado. Contraseña temporal (se muestra una sola vez):\\n\\n'+created.temporary_password+'\\n\\nEl usuario deberá cambiarla al ingresar.');}var pos=A.state.users.findIndex(function(u){return u.id===user.id;});if(pos>=0)A.state.users[pos]=user;else A.state.users.push(user);A.studio();}catch(err){A.toast(A.errorText(err));}finally{btn.disabled=false;btn.textContent='Vincular / crear';}
+      e.preventDefault();
+      var f=new FormData(uf),name=String(f.get('name')).trim(),email=String(f.get('email')).trim().toLowerCase(),role=String(f.get('role')),btn=document.getElementById('createUserBtn');
+      btn.disabled=true;btn.textContent='Procesando…';
+      try{
+        var linked=await A.rpc('aula_add_existing_user',{p_email:email,p_full_name:name,p_role:role});
+        var user;
+        if(linked&&linked.found){
+          user={id:linked.user_id,full_name:name,email:email,role:role,is_active:true,must_change_password:false};
+          A.toast('Cuenta Auth existente vinculada al Aula.');
+        }else{
+          var created=await A.invoke('aula-admin-users',{action:'create_user',email:email,full_name:name,role:role});
+          user={id:created.user.id,full_name:name,email:email,role:role,is_active:true,must_change_password:true};
+          A.ui.tempCredential={user_id:user.id,email:email,password:created.temporary_password};
+          A.toast('Usuario creado con contraseña temporal.');
+        }
+        var pos=A.state.users.findIndex(function(u){return u.id===user.id;});if(pos>=0)A.state.users[pos]=user;else A.state.users.push(user);
+        A.ui.userDetail=user.id;
+        A.studio();
+      }catch(err){A.toast(A.errorText(err));}
+      finally{btn.disabled=false;btn.innerHTML=A.icon('briefcase',16)+' Vincular / crear';}
     };
-    document.querySelectorAll('.role-change').forEach(function(s){s.onchange=async function(){var u=A.user(s.getAttribute('data-id')),old=u.role,next=s.value;try{await A.rpc('aula_set_member_role',{p_user_id:u.id,p_role:next});u.role=next;A.toast('Rol actualizado.');}catch(err){s.value=old;A.toast(A.errorText(err));}};});
-    document.querySelectorAll('.toggle-user').forEach(function(b){b.onclick=async function(){var u=A.user(b.getAttribute('data-id')),next=!u.is_active;try{await A.rpc('aula_set_member_active',{p_user_id:u.id,p_active:next});u.is_active=next;A.toast(next?'Usuario reactivado en Aula.':'Usuario desactivado solo en Aula.');A.studio();}catch(err){A.toast(A.errorText(err));}};});
+
+    document.querySelectorAll('.role-change').forEach(function(s){s.onchange=async function(){
+      var u=A.user(s.getAttribute('data-id')),old=u.role,next=s.value;
+      try{
+        await A.invoke('aula-admin-users',{action:'update_role',user_id:u.id,role:next});
+        u.role=next;A.toast('Rol actualizado.');A.studio();
+      }catch(err){s.value=old;A.toast(A.errorText(err));}
+    };});
+
+    async function setSingleUserActive(id,active){
+      var u=A.user(id);if(!u)return;
+      try{
+        await A.invoke('aula-admin-users',{action:'set_active',user_id:id,active:active});
+        u.is_active=active;
+        A.toast(active?'Usuario reactivado en Aula.':'Usuario desactivado en Aula; Auth compartido conservado.');
+        A.studio();
+      }catch(err){A.toast(A.errorText(err));}
+    }
+    document.querySelectorAll('.toggle-user').forEach(function(b){b.onclick=function(){var u=A.user(b.getAttribute('data-id'));if(u)setSingleUserActive(u.id,!u.is_active);};});
+    var detailToggle=document.getElementById('detailToggleUser');if(detailToggle)detailToggle.onclick=function(){var u=A.user(detailToggle.getAttribute('data-id'));if(u)setSingleUserActive(u.id,!u.is_active);};
+
+    var profileForm=document.getElementById('editUserProfileForm');if(profileForm)profileForm.onsubmit=async function(e){
+      e.preventDefault();var detail=A.user(A.ui.userDetail),f=new FormData(profileForm),name=String(f.get('full_name')).trim(),role=String(f.get('role'));
+      var btn=profileForm.querySelector('button[type=submit]');btn.disabled=true;
+      try{
+        if(name!==detail.full_name){
+          await A.invoke('aula-admin-users',{action:'update_profile',user_id:detail.id,full_name:name});
+          detail.full_name=name;
+        }
+        if(role!==detail.role){
+          await A.invoke('aula-admin-users',{action:'update_role',user_id:detail.id,role:role});
+          detail.role=role;
+        }
+        A.toast('Perfil y permisos actualizados.');A.studio();
+      }catch(err){A.toast(A.errorText(err));btn.disabled=false;}
+    };
+
+    var resetPassword=document.getElementById('resetUserPassword');if(resetPassword)resetPassword.onclick=async function(){
+      var u=A.user(resetPassword.getAttribute('data-id'));if(!u)return;
+      if(!confirm('Se generará una contraseña temporal nueva para '+u.email+'. ¿Continuar?'))return;
+      resetPassword.disabled=true;
+      try{
+        var r=await A.invoke('aula-admin-users',{action:'reset_password',user_id:u.id});
+        A.ui.tempCredential={user_id:u.id,email:u.email,password:r.temporary_password};
+        u.must_change_password=true;
+        A.toast('Contraseña temporal generada.');A.studio();
+      }catch(err){A.toast(A.errorText(err));resetPassword.disabled=false;}
+    };
+
+    var deleteAuth=document.getElementById('deleteUserAuth');if(deleteAuth)deleteAuth.onclick=async function(){
+      var u=A.user(deleteAuth.getAttribute('data-id'));if(!u)return;
+      var email=deleteAuth.getAttribute('data-email')||u.email;
+      var typed=prompt('ELIMINACIÓN DEFINITIVA DE AUTH.\n\nEsta operación solo funcionará si la cuenta fue creada exclusivamente por Aula y no tiene referencias en otros sistemas.\n\nEscribe exactamente el correo para confirmar:\n'+email);
+      if(typed===null)return;
+      if(String(typed).trim().toLowerCase()!==String(email).toLowerCase()){A.toast('El correo de confirmación no coincide.');return;}
+      deleteAuth.disabled=true;
+      try{
+        await A.invoke('aula-admin-users',{action:'delete_auth_user',user_id:u.id,confirm_email:typed});
+        A.state.users=A.state.users.filter(function(x){return x.id!==u.id;});
+        A.ui.userDetail=null;A.ui.tempCredential=null;
+        await A.refresh();
+        A.toast('Cuenta Auth eliminada definitivamente.');A.studio();
+      }catch(err){A.toast(A.errorText(err));deleteAuth.disabled=false;}
+    };
 
     document.querySelectorAll('[data-compliance-section]').forEach(function(b){b.onclick=function(){A.ui.complianceSection=b.getAttribute('data-compliance-section');A.studio();};});
     document.querySelectorAll('[data-position-id]').forEach(function(b){b.onclick=function(){A.ui.selectedPosition=b.getAttribute('data-position-id');A.studio();};});
