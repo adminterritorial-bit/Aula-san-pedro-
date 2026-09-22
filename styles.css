@@ -6764,3 +6764,15 @@ body{background:var(--aula-photo-background)!important}
 
 @media(max-width:1150px){.course-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.manager-toolbar.four{grid-template-columns:repeat(2,minmax(0,1fr))}.user-detail-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.manager-toolbar,.manager-toolbar.three,.manager-toolbar.four,.course-admin-grid,.readiness-grid,.user-detail-metrics{grid-template-columns:1fr}.phase-admin-card>header{grid-template-columns:1fr}.premium-admin-row,.question-admin-row{grid-template-columns:1fr!important}.admin-order-controls,.question-order{order:2}.course-picker-grid{grid-template-columns:1fr}}
+
+
+/* === PLAYER ACHIEVEMENTS === */
+.course-achievements{display:grid;grid-template-columns:.8fr 1.2fr;gap:16px;margin-top:18px}
+.course-achievement-card,.phase-progress-card{background:rgba(255,255,255,.96);border:1px solid #e0e8f1;border-radius:22px;padding:18px;box-shadow:0 16px 38px rgba(16,45,78,.06)}
+.achievement-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.achievement-grid>div{min-height:82px;border-radius:14px;border:1px solid #e2e9f1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;background:#f8fafc;color:#94a1af}
+.achievement-grid>div span{font-size:1.35rem}.achievement-grid>div small{font-size:.62rem;font-weight:850}
+.achievement-grid>div.unlocked{background:linear-gradient(145deg,#eef8ff,#fff9db);border-color:#c9dcf0;color:#135797;box-shadow:0 9px 22px rgba(16,75,140,.08)}
+.phase-progress-card{display:grid;gap:9px}.phase-progress-row{display:grid;grid-template-columns:minmax(140px,1fr) minmax(110px,1.1fr) 46px;gap:10px;align-items:center}.phase-progress-row strong,.phase-progress-row small{display:block}.phase-progress-row small{font-size:.62rem;color:#7b8da0;margin-top:2px}.phase-progress-row b{text-align:right;font-size:.72rem;color:#2c5c8f}
+.course-stage-actions{display:flex;gap:9px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+@media(max-width:900px){.course-achievements{grid-template-columns:1fr}.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.phase-progress-row{grid-template-columns:1fr}.phase-progress-row b{text-align:left}}
