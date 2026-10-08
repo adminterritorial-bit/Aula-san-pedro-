@@ -1,0 +1,15 @@
+/* Identidad municipal - capa final sobre la experiencia base. */
+:root { font-family: "Century Gothic","Avenir Next",Arial,sans-serif; --sp-primary:#063569; --sp-primary-deep:#061f46; --sp-green:#128e78; }
+html,body,#root { font-family:"Century Gothic","Avenir Next",Arial,sans-serif; }
+.auth-panel-copy h1,.auth-panel-copy h2,.studio-hero h1,.home-hero h1,
+.catalog-hero h1,.page h1 { text-shadow:0 3px 14px rgba(3,24,48,.24); }
+.auth-primary,.studio-navigation-button,.studio-refresh-button {
+ transition: transform .22s ease, box-shadow .22s ease, background .22s ease;
+}
+.auth-primary:hover,.studio-navigation-button:hover,.studio-refresh-button:hover {
+ box-shadow:0 12px 26px rgba(5,31,70,.20);
+}
+.auth-brand-card img,.company-logo { object-fit:contain; }
+@media(prefers-reduced-motion:reduce){
+ .auth-primary,.studio-navigation-button,.studio-refresh-button { transition:none!important; }
+}

@@ -1,0 +1,31 @@
+name: Aula San Pedro · Modern staging build
+
+on:
+  pull_request:
+    paths: ['modern/**', '.github/workflows/aula-modern-ci.yml']
+  push:
+    branches: ['feat/migracion-arquitectura-aula-ei']
+    paths: ['modern/**', '.github/workflows/aula-modern-ci.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  staging-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modern
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: modern/package-lock.json
+      - name: Dependencias reproducibles
+        run: npm ci
+      - name: Build aislado sin despliegue
+        env:
+          VITE_BASE_PATH: /Aula-san-pedro-/
+        run: npm run build:staging

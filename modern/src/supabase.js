@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-export const SUPABASE_URL = 'https://dvdpgllezrmttrknbcjq.supabase.co'
-export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_u8aF30AdRo_flW3qb-Z8sg_evTHk9Ry'
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://dvdpgllezrmttrknbcjq.supabase.co'
+export const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_u8aF30AdRo_flW3qb-Z8sg_evTHk9Ry'
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {

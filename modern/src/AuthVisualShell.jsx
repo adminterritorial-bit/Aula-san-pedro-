@@ -11,7 +11,7 @@ export default function AuthVisualShell({
 }) {
   return <main
     className="auth-page"
-    style={{ '--auth-photo': `url("${assetUrl('brand/fondo.jpg')}")` }}
+    style={{ '--auth-photo': `url("${assetUrl('brand/san-pedro.svg')}")` }}
   >
     <div className="auth-backdrop" aria-hidden="true">
       <span className="auth-orb auth-orb-one" />
@@ -23,9 +23,9 @@ export default function AuthVisualShell({
     <section className="auth-hero-clean">
       <div className="auth-brand-row">
         <div className="auth-brand-card">
-          <img src={assetUrl('brand/logo-aula-ei.png')} alt="Aula San Pedro" />
+          <img src={assetUrl('brand/san-pedro.svg')} alt="Aula San Pedro" />
         </div>
-        <span className="auth-kicker">Academia interna · Electroingeniería</span>
+        <span className="auth-kicker">Academia interna · Alcaldía de San Pedro</span>
       </div>
 
       <div className="auth-copy">
@@ -49,7 +49,7 @@ export default function AuthVisualShell({
 
 export function AuthPanelBrand({ secureLabel = 'Acceso protegido' }) {
   return <div className="auth-panel-brand">
-    <img className="company-logo" src={assetUrl('brand/logo-electroingenieria.jpg')} alt="Electroingeniería" />
+    <img className="company-logo" src={assetUrl('brand/san-pedro.svg')} alt="Alcaldía de San Pedro" />
     <span className="auth-panel-badge"><ShieldCheck size={15} /> {secureLabel}</span>
   </div>
 }
