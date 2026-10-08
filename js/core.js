@@ -614,7 +614,6 @@
         // No expulsar al usuario por un error del backend; permitir reintento seguro.
         A.backendIssue = err;
         A.profile = null;
-        return;
       }
     }
 
