@@ -25,6 +25,7 @@ import './global-experience.css'
 import './responsive-foundation.css'
 import './responsive-controls.css'
 import './municipal-theme.css'
+import './migration-preview.css'
 
 installRuntimeDiagnostics()
 

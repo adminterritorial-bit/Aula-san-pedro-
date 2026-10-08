@@ -3,7 +3,7 @@ import AdminMfaGate from './AdminMfaGate.jsx'
 import ExperienceLayer from './ExperienceLayer.jsx'
 import MobileViewportSync from './MobileViewportSync.jsx'
 import LegalGate from './legal/LegalGate.jsx'
-import { appUrl } from './paths.js'
+import { appUrl, assetUrl } from './paths.js'
 import { clearDataCache } from './data-cache.js'
 import { withTimeout } from './async-utils.js'
 import { AccessError, LoginPage, PasswordGate, Startup } from './auth/AuthScreens.jsx'
@@ -27,7 +27,27 @@ function normalizeRpcRow(value) {
   return Array.isArray(value) ? value[0] || null : value || null
 }
 
+// Interbloqueo de despliegue, no sustituye RLS ni autorización en el servidor.
 export default function App() {
+  if (import.meta.env.VITE_MUNICIPAL_BACKEND_VERIFIED !== 'true') {
+    return <main className="migration-preview" role="main">
+      <div className="migration-preview__panel">
+        <img src={assetUrl('brand/san-pedro.svg')} alt="Identidad de San Pedro" />
+        <span className="migration-preview__eyebrow">Alcaldía de San Pedro · Formación institucional</span>
+        <h1>Aula San Pedro</h1>
+        <p>Estamos integrando la nueva arquitectura modular. Esta versión de pruebas todavía no está conectada a los módulos de datos municipales.</p>
+        <div className="migration-preview__modules">
+          <span>Capacitaciones</span><span>Evaluaciones</span><span>Certificados</span>
+          <span>Administración</span><span>Seguridad</span><span>Accesibilidad</span>
+        </div>
+        <small>La versión actual continúa disponible mientras se verifica la compatibilidad con Supabase.</small>
+      </div>
+    </main>
+  }
+  return <ActiveApp />
+}
+
+function ActiveApp() {
   const [route, setRoute] = useState(() => routeInfo())
   const [session, setSession] = useState(null)
   const [sessionReady, setSessionReady] = useState(false)

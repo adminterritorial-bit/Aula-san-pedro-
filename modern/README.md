@@ -38,3 +38,6 @@ npm run build:staging
 Node 24. El build verifica empaquetado, no la operación real contra la base de datos. Se requiere ejecutar la matriz de `QA.md` y migrar el contrato backend antes de sustituir el sitio existente.
 
 **Licencias y titularidad**: verificar autorización de reutilización y divulgación del código de origen entre las dos organizaciones antes de fusionar o publicar esta rama. La disponibilidad de un repositorio público no equivale automáticamente a una licencia de redistribución.
+
+## Interbloqueo de despliegue
+Por defecto la versión React muestra una pantalla de migración sin acceder a los datos de Aula. La variable de compilación `VITE_MUNICIPAL_BACKEND_VERIFIED=true` activa el flujo interno **solamente después de reconciliar todas las tablas/RPC, auditar RLS, Google OAuth, y completar la matriz QA**. Esta variable NO es una barrera de autorización de seguridad, pues el backend debe verificar roles y pertenencia en cada operación.

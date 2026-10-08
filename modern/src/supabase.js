@@ -71,7 +71,7 @@ async function flushSignedUrlQueue() {
 
     try {
       const { data, error } = await supabase.storage
-        .from('course-assets')
+        .from('aula-course-assets')
         .createSignedUrls(paths, Number(ttl))
 
       if (error) throw error
@@ -95,7 +95,7 @@ async function flushSignedUrlQueue() {
       await Promise.all(items.map(async (item) => {
         try {
           const { data, error } = await supabase.storage
-            .from('course-assets')
+            .from('aula-course-assets')
             .createSignedUrl(item.path, Number(ttl))
           if (error) throw error
           const expiresAt = Date.now() + Math.max(30, Number(ttl) - 60) * 1000
