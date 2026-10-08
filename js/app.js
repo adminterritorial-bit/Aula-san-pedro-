@@ -106,6 +106,7 @@
   w.AulaRender = function () {
     var A = w.AulaDemo;
     if (!A.logged()) { A.loginView(); return; }
+    if (A.backendIssue) { A.accessErrorView(A.backendIssue); return; }
     if (!A.profile) { A.loadingView('Preparando tu Aula…'); return; }
     if (A.profile.must_change_password) { A.passwordChangeView(); return; }
     var p = A.route();

@@ -1,4 +1,4 @@
-const CACHE_NAME='aula-san-pedro-shell-v4';
+const CACHE_NAME='aula-san-pedro-shell-v5';
 const APP_SHELL=[
   './',
   './index.html',
