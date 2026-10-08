@@ -1,0 +1,102 @@
+/* Aula San Pedro · Visual refinado, capa no destructiva.
+   Respeta la cascada actual y las preferencias de movimiento del usuario. */
+:root{
+  --sp-blue:#061f46;
+  --sp-blue-medium:#063d77;
+  --sp-green:#078a79;
+  --sp-focus:#0c9988;
+  --sp-shadow:0 18px 46px rgba(6,31,70,.12),0 2px 8px rgba(6,31,70,.06);
+}
+html{scroll-behavior:smooth}
+body,button,input,textarea,select{
+  font-family:"Century Gothic","Avenir Next","Trebuchet MS",Arial,sans-serif;
+}
+button,input,select,textarea{min-width:0}
+button,a,[role="button"]{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,
+textarea:focus-visible,select:focus-visible,[role="button"]:focus-visible{
+  outline:3px solid var(--sp-focus);
+  outline-offset:3px;
+}
+button,.primary-button,.secondary-button,[role="button"]{
+  -webkit-tap-highlight-color:transparent;
+}
+.panel-card,.learner-side-card,.phase-admin-card,.home-course-card,
+.catalog-course-card,.studio-hero,.learner-stage-card,
+.auth-panel,.auth-panel-card,.exam-result,
+.home-metric-grid article,.analytics-chart-card{
+  box-shadow:var(--sp-shadow);
+}
+.panel-card,.learner-side-card,.phase-admin-card,.home-course-card,
+.catalog-course-card{
+  transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;
+}
+@media (hover:hover) and (pointer:fine){
+ .home-course-card:hover,.catalog-course-card:hover{
+   transform:translateY(-3px);
+   box-shadow:0 22px 56px rgba(6,31,70,.18),0 2px 12px rgba(6,31,70,.07);
+ }
+}
+.auth-page h1,.auth-panel h2,.learner-course-hero h1,
+.games-original-hero h1,.studio-hero h1,.home-hero h1,
+.catalog-hero h1,.learner-hero-copy h1{
+  text-shadow:0 3px 14px rgba(4,26,57,.45),0 1px 2px rgba(0,0,0,.22);
+}
+.stage-context-bar strong,.exam-result h2,.phase-admin-card h3,
+.question-admin-row strong{overflow-wrap:anywhere}
+.learner-course-layout,.learner-stage-column,
+.learner-progress-panel,.course-editor-layout,.panel-card,
+.studio-page,.studio-content,.learner-stage-card{
+  min-width:0;max-width:100%;
+}
+.learner-stage-card img,.learner-stage-card video,
+.learner-stage-card iframe,.learner-stage-card canvas,
+.panel-card img,.panel-card video{
+  max-width:100%;
+}
+.learner-stage-card iframe,.learner-stage-card video{
+  border-radius:12px;
+}
+.demo-inline-form input:not([type="checkbox"]),
+.demo-inline-form textarea,.demo-inline-form select,
+.auth-form input{
+  max-width:100%;width:100%;box-sizing:border-box;
+}
+.stage-nav-button,.exam-callout,.tab-bar button,
+.integrated-tab-bar button{min-height:44px}
+.practice-gate-backdrop{overscroll-behavior:contain}
+.practice-gate-modal{
+  max-height:min(90dvh,860px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  box-shadow:0 25px 85px rgba(5,24,58,.34);
+}
+.demo-toast{max-width:min(90vw,540px);overflow-wrap:anywhere}
+@media(max-width:1100px){
+  .learner-course-layout{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .learner-stage-column{order:1}
+  .learner-progress-panel{order:2}
+  .learner-outline{max-width:min(92vw,400px)}
+}
+@media(max-width:620px){
+  .auth-panel,.panel-card,.learner-side-card,.learner-stage-card{
+    border-radius:16px;
+  }
+  .demo-actions,.result-actions,.game-preview-actions{
+    flex-wrap:wrap;gap:10px;
+  }
+  .demo-actions > button,.result-actions > a,
+  .game-preview-actions > a{max-width:100%;min-height:44px}
+  .practice-gate-modal{max-height:calc(100dvh - 22px);border-radius:18px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    scroll-behavior:auto!important;
+  }
+}

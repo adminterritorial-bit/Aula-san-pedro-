@@ -1,0 +1,35 @@
+name: Aula San Pedro · Municipal regression
+on:
+  push:
+    branches: [main, 'feat/migracion-arquitectura-aula-ei']
+    paths:
+      - 'js/**'
+      - 'tests/**'
+      - 'aula-premium.css'
+      - 'index.html'
+      - '404.html'
+      - 'sw.js'
+      - '.github/workflows/municipal-quality.yml'
+      - '.github/workflows/deploy-pages.yml'
+  pull_request:
+    paths:
+      - 'js/**'
+      - 'tests/**'
+      - 'aula-premium.css'
+      - 'index.html'
+      - '404.html'
+      - 'sw.js'
+      - '.github/workflows/municipal-quality.yml'
+      - '.github/workflows/deploy-pages.yml'
+permissions:
+  contents: read
+jobs:
+  verify-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate municipal app contracts and syntax
+        run: node tests/verify-municipal.mjs

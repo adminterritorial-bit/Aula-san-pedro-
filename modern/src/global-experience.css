@@ -1,0 +1,371 @@
+/* ==========================================================================
+   Aula San Pedro · Motion & Interaction System
+   Fuente transversal para fluidez, profundidad y feedback.
+   ========================================================================== */
+
+:where(.learner-app-shell,.embedded-studio,.certificate-export-page,.certificate-state-page,.auth-page,.startup-clean){
+  --motion-fast:150ms;
+  --motion-base:220ms;
+  --motion-slow:360ms;
+  --motion-enter:480ms;
+  --motion-ease:cubic-bezier(.2,.72,.22,1);
+  --motion-ease-out:cubic-bezier(.16,1,.3,1);
+  --motion-soft-shadow:0 14px 32px rgba(18,54,96,.085);
+  --motion-lift-shadow:0 22px 48px rgba(18,54,96,.13);
+}
+
+/* ---------- Scroll reveal común ---------- */
+.premium-reveal{
+  opacity:1;
+  transform:none;
+}
+.premium-reveal-in{will-change:auto}
+
+/* ---------- Panels / cards ---------- */
+:where(
+  .panel-card,
+  .home-course-card,
+  .catalog-course-card,
+  .games-grid>article,
+  .course-library-card,
+  .pending-certificate-card,
+  .compliance-metrics article,
+  .certificate-metric-card,
+  .assignment-stats article,
+  .course-template-card,
+  .course-picker,
+  .import-box,
+  .compliance-flow article,
+  .user-metrics-grid article,
+  .course-metrics-grid article,
+  .certificate-metrics-grid article
+){
+  position:relative;
+  transform:translateZ(0);
+  transition:
+    transform var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-slow) var(--motion-ease),
+    border-color var(--motion-base) ease,
+    background-color var(--motion-base) ease
+    ;
+}
+@media(hover:hover) and (pointer:fine){
+  :where(
+    .panel-card,
+    .home-course-card,
+    .catalog-course-card,
+    .games-grid>article,
+    .course-library-card,
+    .pending-certificate-card,
+    .compliance-metrics article,
+    .certificate-metric-card,
+    .course-template-card,
+    .course-picker,
+    .compliance-flow article
+  ):hover{
+    transform:translate3d(0,-3px,0);
+    box-shadow:var(--motion-lift-shadow);
+  }
+  :where(.home-course-card,.catalog-course-card,.course-library-card,.pending-certificate-card):hover img{
+    transform:scale(1.025);
+  }
+}
+:where(.home-course-card,.catalog-course-card,.course-library-card,.pending-certificate-card) img{
+  transition:transform var(--motion-slow) var(--motion-ease-out);
+}
+
+/* ---------- Métricas ---------- */
+:where(
+  .course-metrics-grid,
+  .user-metrics-grid,
+  .certificate-metrics-grid,
+  .compliance-metrics,
+  .home-metric-grid,
+  .catalog-original-metrics
+)>*{
+  transition:transform var(--motion-base) var(--motion-ease),box-shadow var(--motion-base) ease,border-color var(--motion-base) ease;
+}
+@media(hover:hover) and (pointer:fine){
+  :where(
+    .course-metrics-grid,
+    .user-metrics-grid,
+    .certificate-metrics-grid,
+    .compliance-metrics,
+    .home-metric-grid,
+    .catalog-original-metrics
+  )>*:hover{
+    transform:translateY(-2px);
+    box-shadow:var(--motion-soft-shadow);
+  }
+  :where(
+    .course-metrics-grid,
+    .user-metrics-grid,
+    .certificate-metrics-grid,
+    .compliance-metrics
+  )>*:hover svg{
+    transform:scale(1.08) rotate(-3deg);
+  }
+}
+:where(
+  .course-metrics-grid,
+  .user-metrics-grid,
+  .certificate-metrics-grid,
+  .compliance-metrics
+) svg{transition:transform var(--motion-base) var(--motion-ease-out)}
+
+/* ---------- Chips, iconos y flujos ---------- */
+:where(.status-badge,.course-status-badge,.user-status-pill,.role-chip,.plain-chip,.account-state){
+  transition:transform var(--motion-fast) var(--motion-ease),box-shadow var(--motion-base) ease;
+}
+@media(hover:hover) and (pointer:fine){
+  :where(.status-badge,.course-status-badge,.user-status-pill,.role-chip,.plain-chip,.account-state):hover{
+    transform:translateY(-1px);
+    box-shadow:0 7px 16px rgba(18,54,96,.07);
+  }
+}
+:where(.icon-button,.studio-navigation-button,.primary-button,.secondary-button) svg{
+  transition:transform var(--motion-base) var(--motion-ease-out);
+}
+@media(hover:hover) and (pointer:fine){
+  :where(.icon-button,.studio-navigation-button,.primary-button,.secondary-button):hover svg{
+    transform:translateY(-1px) scale(1.06);
+  }
+}
+.compliance-flow .flow-chevron{
+  transition:transform var(--motion-base) var(--motion-ease),color var(--motion-base) ease,opacity var(--motion-base) ease;
+}
+@media(hover:hover) and (pointer:fine){
+  .compliance-flow:hover .flow-chevron{transform:translateX(2px);opacity:.88}
+}
+.studio-hero-metric-icon{
+  animation:motionMetricFloat 4.6s ease-in-out infinite alternate;
+}
+@keyframes motionMetricFloat{
+  to{transform:translate3d(0,-3px,0) rotate(-2deg)}
+}
+
+/* ---------- Botones ---------- */
+:where(
+  .primary-button,.secondary-button,.danger-button,.file-button,.icon-button,.text-action,
+  .studio-navigation-button,.studio-refresh-button,
+  .home-yellow-button,.home-glass-button,
+  .catalog-original-yellow,.catalog-original-glass,
+  .course-edit-link,.course-library-card button,
+  .certificate-view-switch button,.compliance-tabs button
+){
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) ease,
+    border-color var(--motion-base) ease,
+    color var(--motion-base) ease;
+}
+:where(
+  .primary-button,.secondary-button,.danger-button,.file-button,.icon-button,
+  .studio-navigation-button,.studio-refresh-button,
+  .home-yellow-button,.home-glass-button,
+  .catalog-original-yellow,.catalog-original-glass,
+  .certificate-view-switch button,.compliance-tabs button
+):active:not(:disabled){
+  transform:translateY(1px) scale(.985);
+}
+
+/* ---------- Studio: cambio de herramientas ---------- */
+.studio-tab-stage{transform-origin:top center}
+.studio-tab-content{
+  animation:motionStageIn .16s var(--motion-ease-out) both;
+}
+@keyframes motionStageIn{
+  from{opacity:.55;transform:translate3d(0,2px,0)}
+  to{opacity:1;transform:none}
+}
+.studio-navigation-button .studio-navigation-icon{
+  transition:transform var(--motion-base) var(--motion-ease-out),background var(--motion-base) ease,color var(--motion-base) ease;
+}
+@media(hover:hover) and (pointer:fine){
+  .studio-navigation-button:hover .studio-navigation-icon{transform:translateY(-1px) scale(1.08)}
+}
+.studio-navigation-button.is-active .studio-navigation-icon{transform:scale(1.05)}
+
+/* ---------- Modales / drawers ---------- */
+.modal-backdrop,.drawer-backdrop{
+  animation:motionBackdropIn .22s ease both;
+}
+:where(.course-create-modal,.user-create-modal,.certificate-modal,.modal-card){
+  transform-origin:center 18%;
+  animation:motionModalIn .32s var(--motion-ease-out) both;
+}
+.user-detail-drawer{
+  animation:motionDrawerIn .34s var(--motion-ease-out) both;
+}
+@keyframes motionBackdropIn{from{opacity:0}to{opacity:1}}
+@keyframes motionModalIn{
+  from{opacity:0;transform:translateY(10px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+@keyframes motionDrawerIn{
+  from{opacity:.45;transform:translateX(26px)}
+  to{opacity:1;transform:none}
+}
+
+/* ---------- Mensajes / barras de acciones ---------- */
+.message-banner,.bulk-action-bar,.user-bulk-bar,.studio-sync-feedback{
+  animation:motionToastIn .3s var(--motion-ease-out) both;
+}
+@keyframes motionToastIn{
+  from{opacity:0;transform:translateY(-8px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+
+/* ---------- Tablas ---------- */
+.data-table tbody tr{
+  transition:background-color var(--motion-fast) ease,box-shadow var(--motion-fast) ease,opacity var(--motion-base) ease;
+}
+@media(hover:hover) and (pointer:fine){
+  .data-table tbody tr:hover{
+    box-shadow:inset 3px 0 0 rgba(0,91,190,.28);
+  }
+}
+.data-table th.sortable{
+  transition:background-color var(--motion-fast) ease,color var(--motion-fast) ease;
+}
+.data-table th.sortable:hover{background:#eaf2fb;color:#174f8e}
+
+/* ---------- Inputs ---------- */
+:where(
+  .embedded-studio input,.embedded-studio select,.embedded-studio textarea,
+  .auth-page input,.certificate-export-page input
+){
+  transition:
+    border-color var(--motion-base) ease,
+    box-shadow var(--motion-base) ease,
+    background-color var(--motion-base) ease,
+    transform var(--motion-fast) var(--motion-ease);
+}
+:where(
+  .embedded-studio input,.embedded-studio select,.embedded-studio textarea,
+  .auth-page input,.certificate-export-page input
+):focus{
+  transform:translateY(-1px);
+}
+
+/* ---------- Progreso ---------- */
+:where(
+  .catalog-card-progress>div,
+  .home-training-path-track,
+  .authoring-progress-track,
+  .certificate-score-track
+){
+  position:relative;
+  overflow:hidden;
+}
+:where(
+  .catalog-card-progress>div,
+  .home-training-path-track,
+  .authoring-progress-track,
+  .certificate-score-track
+):after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.52) 50%,transparent 65%);
+  transform:translateX(-130%);
+  animation:motionProgressGlint 4.8s ease-in-out infinite;
+}
+@keyframes motionProgressGlint{
+  0%,72%{transform:translateX(-130%);opacity:0}
+  78%{opacity:.8}
+  100%{transform:translateX(130%);opacity:0}
+}
+
+/* ---------- Responsive / accessibility ---------- */
+@media(max-width:900px){
+  .premium-reveal{
+    transform:none;
+    transition:opacity .24s ease;
+  }
+  .studio-tab-content{animation-duration:.12s}
+  :where(
+    .panel-card,.home-course-card,.catalog-course-card,.games-grid>article,
+    .course-library-card,.pending-certificate-card,.compliance-metrics article
+  ){
+    transition:box-shadow .2s ease,border-color .2s ease,background-color .2s ease;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .premium-reveal{opacity:1!important;transform:none!important;filter:none!important;transition:none!important}
+  :where(.modal-backdrop,.drawer-backdrop,.course-create-modal,.user-create-modal,.user-detail-drawer,.message-banner,.bulk-action-bar,.user-bulk-bar,.studio-sync-feedback,.studio-tab-content){
+    animation:none!important
+  }
+  *{scroll-behavior:auto!important}
+}
+/* ==========================================================================
+   Aula San Pedro · Compositor Performance v5
+   Mantiene animaciones, pero evita blur/filtros en superficies grandes o sticky.
+   ========================================================================== */
+:where(
+  .learner-global-sidebar,
+  .learner-topbar,
+  .stage-context-bar,
+  .exam-submit-bar,
+  .lightbox-course-nav,
+  .catalog-intro,
+  .catalog-summary article,
+  .catalog-workspace,
+  .catalog-personal-greeting>span,
+  .catalog-hero-secondary,
+  .catalog-card-icon,
+  .catalog-card-progress-pill,
+  .catalog-resume-play,
+  .catalog-original-pill,
+  .catalog-original-glass,
+  .catalog-original-hero-metric,
+  .catalog-original-metrics article,
+  .training-notification-panel,
+  .bulk-action-bar,
+  .user-bulk-bar,
+  .studio-sync-feedback,
+  .selection-toolbar,
+  .certificates-data-table thead th,
+  .certificate-pagination,
+  .studio-hero-eyebrow,
+  .studio-hero-metric,
+  .studio-navigation-shell,
+  .modal-backdrop,
+  .drawer-backdrop,
+  .course-authoring-header,
+  .compliance-hero-score,
+  .compliance-tabs,
+  .auth-kicker,
+  .auth-feature-row>span,
+  .auth-panel-clean
+){
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+:where(
+  .learner-topbar,
+  .stage-context-bar,
+  .exam-submit-bar,
+  .bulk-action-bar,
+  .user-bulk-bar,
+  .studio-navigation-shell,
+  .course-authoring-header,
+  .compliance-tabs,
+  .training-notification-panel,
+  .auth-panel-clean
+){
+  transform:translateZ(0);
+}
+:where(
+  .home-course-card,
+  .catalog-course-card,
+  .course-library-card,
+  .pending-certificate-card,
+  .mobile-user-card,
+  .mobile-certificate-card,
+  .mobile-position-card
+){
+  contain:layout paint style;
+}

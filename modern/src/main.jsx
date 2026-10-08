@@ -1,0 +1,84 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import AppErrorBoundary from './AppErrorBoundary.jsx'
+import { installRuntimeDiagnostics } from './runtime-diagnostics.js'
+import '../studio/src/styles/core.css'
+import '../studio/src/styles/users.css'
+import '../studio/src/styles/certificates.css'
+import '../studio/src/styles/courses.css'
+import '../studio/src/styles/compliance.css'
+import '../studio/src/styles/legal.css'
+import '../player/src/styles/core.css'
+import '../player/src/styles/course.css'
+import '../player/src/styles/catalog.css'
+import '../player/src/styles/shell.css'
+import '../player/src/styles/modules.css'
+import '../player/src/styles/notifications.css'
+import '../player/src/styles/privacy.css'
+import '../player/src/experience.css'
+import '../certificate/src/styles.css'
+import '../certificate/src/experience.css'
+import './auth.css'
+import './legal/legal.css'
+import './global-experience.css'
+import './responsive-foundation.css'
+import './responsive-controls.css'
+import './municipal-theme.css'
+import './migration-preview.css'
+
+installRuntimeDiagnostics()
+
+const mobileStyleQuery = window.matchMedia('(max-width: 900px)')
+let mobileStylesPromise = null
+
+function loadMobileStyles() {
+  if (mobileStylesPromise) return mobileStylesPromise
+  mobileStylesPromise = (async () => {
+    await import('./mobile.css')
+    await import('./mobile-app.css')
+  })()
+  return mobileStylesPromise
+}
+
+async function bootstrap() {
+  // En móvil cargamos la capa responsive antes del primer render para evitar FOUC.
+  if (mobileStyleQuery.matches) await loadMobileStyles()
+
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <AppErrorBoundary>
+        <App />
+      </AppErrorBoundary>
+    </React.StrictMode>,
+  )
+
+  // Mantiene responsive real si una ventana de escritorio se reduce después.
+  mobileStyleQuery.addEventListener?.('change', (event) => {
+    if (event.matches) void loadMobileStyles()
+  })
+}
+
+void bootstrap()
+
+
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const workerUrl = new URL('sw.js?v=4', window.location.origin + import.meta.env.BASE_URL).href
+    let refreshing = false
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing || sessionStorage.getItem('aula-san-pedro-pwa-refresh-v4') === '1') return
+      refreshing = true
+      sessionStorage.setItem('aula-san-pedro-pwa-refresh-v4', '1')
+      window.location.reload()
+    })
+
+    navigator.serviceWorker.register(workerUrl, {
+      scope: import.meta.env.BASE_URL,
+      updateViaCache: 'none',
+    })
+      .then((registration) => registration.update())
+      .catch((error) => console.warn('Aula San Pedro PWA: no fue posible actualizar el service worker.', error))
+  }, { once: true })
+}

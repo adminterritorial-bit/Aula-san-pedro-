@@ -1,0 +1,31 @@
+{
+  "id": "./",
+  "name": "Aula San Pedro",
+  "short_name": "Aula San Pedro",
+  "description": "Plataforma institucional de formación de la Alcaldía de San Pedro",
+  "lang": "es-CO",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#071f3f",
+  "theme_color": "#003b8e",
+  "categories": [
+    "education",
+    "business",
+    "productivity"
+  ],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

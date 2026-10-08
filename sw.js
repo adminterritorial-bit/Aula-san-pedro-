@@ -1,9 +1,10 @@
-const CACHE_NAME='aula-san-pedro-shell-v3';
+const CACHE_NAME='aula-san-pedro-shell-v4';
 const APP_SHELL=[
   './',
   './index.html',
   './404.html',
   './styles.css',
+  './aula-premium.css?v=sp-premium-20261008',
   './favicon.svg',
   './manifest.webmanifest',
   './js/supabase.js',
