@@ -108,10 +108,69 @@
     document.querySelectorAll('button,input,select,textarea').forEach(function (el) { if (el.id !== 'logoutBtn') el.disabled = !!busy; });
   };
 
+  A.backendIssue = null;
+  // No registrar JWT, correos, contraseñas ni credenciales en la consola.
+  A.accessErrorMessage = function (error) {
+    var code = String((error && error.code) || '').toUpperCase();
+    var status = Number((error && error.status) || 0);
+    var suffix = (status ? 'HTTP ' + status : '') + (code ? (status ? ' · ' : '') + code : '');
+    if (code === '42501') return 'Supabase rechazó los permisos de acceso del Aula. Un administrador de la base debe revisar los privilegios de aula_bootstrap y la membresía institucional.' + (suffix ? ' (' + suffix + ')' : '');
+    if (code === 'PGRST301' || code === 'PGRST303') return 'El token de sesión no fue aceptado por la API de datos. Intenta actualizar la sesión o ingresar nuevamente.' + (suffix ? ' (' + suffix + ')' : '');
+    if (code === 'PGRST302') return 'La API no recibió una sesión válida. Inicia sesión nuevamente con tu correo institucional.' + (suffix ? ' (' + suffix + ')' : '');
+    if (code === 'AULA_MEMBERSHIP') return 'Tu cuenta de Google está autenticada, pero no cuenta con una membresía activa de Aula San Pedro.';
+    if (status === 401 || status === 403) return 'Supabase no autorizó el acceso al Aula. Revisa la sesión, los permisos y la membresía institucional.' + (suffix ? ' (' + suffix + ')' : '');
+    return A.errorText(error, 'No fue posible recuperar los datos institucionales.');
+  };
   A.rpc = async function (name, args) {
     var res = await A.sb.rpc(name, args || {});
-    if (res.error) throw res.error;
+    if (res.error && name === 'aula_bootstrap' && Number(res.error.status) === 401) {
+      // Distinguir un JWT vencido de una RPC denegada: no debilitar RLS ni permisos.
+      var validation;
+      try { validation = await A.sb.auth.getUser(); } catch (e) { validation = { error: e }; }
+      var code = String(res.error.code || '').toUpperCase();
+      var needsRefresh = !!(validation.error || !validation.data || !validation.data.user ||
+        code === 'PGRST301' || code === 'PGRST303');
+      if (needsRefresh && A.session) {
+        try {
+          var refreshed = await A.sb.auth.refreshSession();
+          if (!refreshed.error && refreshed.data && refreshed.data.session) {
+            A.session = refreshed.data.session;
+            res = await A.sb.rpc(name, args || {});
+          }
+        } catch (_) { /* Preservar el error de la API para diagnóstico. */ }
+      }
+    }
+    if (res.error) {
+      var status = Number(res.error.status || 0);
+      var code = String(res.error.code || '').slice(0, 24);
+      if (name === 'aula_bootstrap') console.warn('Aula San Pedro: acceso a API rechazado', { operation: name, status: status, code: code });
+      throw res.error;
+    }
     return res.data;
+  };
+  A.accessErrorView = function (error) {
+    var root = document.getElementById('root');
+    if (!root) return;
+    root.innerHTML = '<main class="auth-page"><section class="auth-panel" style="margin:auto;max-width:640px"><div class="auth-form">' +
+      '<span class="eyebrow">Conexión institucional</span><h2>No fue posible abrir tu Aula</h2>' +
+      '<p role="alert">' + A.escape(A.accessErrorMessage(error)) + '</p>' +
+      '<p>Tu cuenta se conserva. Puedes volver a comprobar la conexión o cerrar sesión de forma segura.</p>' +
+      '<div class="demo-actions"><button id="retryInstitutionalAccess" class="primary-button">Reintentar conexión</button>' +
+      '<button id="exitInstitutionalAccess" class="secondary-button">Cerrar sesión</button></div></div></section></main>';
+    var retry = document.getElementById('retryInstitutionalAccess');
+    if (retry) retry.onclick = async function () {
+      retry.disabled = true;
+      try { await A.refresh(); A.backendIssue = null; if (w.AulaRender) w.AulaRender(); }
+      catch (err) { A.backendIssue = err; A.accessErrorView(err); }
+    };
+    var exit = document.getElementById('exitInstitutionalAccess');
+    if (exit) exit.onclick = async function () {
+      exit.disabled = true;
+      await A.sb.auth.signOut({ scope: 'local' }).catch(function () {});
+      A.session = null; A.profile = null; A.backendIssue = null;
+      A.hydrate({});
+      A.loginView();
+    };
   };
   A.invoke = async function (name, body) {
     var res = await A.sb.functions.invoke(name, { body: body || {} });
@@ -140,6 +199,12 @@
       A.rpc('aula_experience_bootstrap').catch(function(){ return { notifications:[], agenda:[] }; })
     ]);
     A.hydrate(results[0]);
+    if (!A.profile) {
+      var missing = new Error('Aula: membresía inactiva o no encontrada.');
+      missing.status = 403; missing.code = 'AULA_MEMBERSHIP';
+      throw missing;
+    }
+    A.backendIssue = null;
     A.experience = results[1] || { notifications:[], agenda:[] };
     A.experience.notifications = A.experience.notifications || [];
     A.experience.agenda = A.experience.agenda || [];
@@ -428,9 +493,11 @@
             w.google.accounts.id.initialize({
               client_id: A.GOOGLE_CLIENT_ID,
               hd: A.INSTITUTIONAL_DOMAIN,
+              use_fedcm_for_button: true,
               ux_mode: 'popup',
               auto_select: false,
               callback: async function (response) {
+                A.backendIssue = null;
                 googleMessage.style.display = 'none';
                 try {
                   if (!response || !response.credential) throw new Error('Google no devolvió una credencial válida.');
@@ -445,10 +512,12 @@
                     throw new Error('Debes usar una cuenta institucional @' + A.INSTITUTIONAL_DOMAIN + '.');
                   }
                   A.session = result.data.session;
-                  await A.refresh();
+                  try { await A.refresh(); }
+                  catch (accessError) { A.backendIssue = accessError; throw accessError; }
                   location.hash = '#/';
                   w.AulaRender();
                 } catch (err) {
+                  if (A.backendIssue && A.session) { A.accessErrorView(A.backendIssue); return; }
                   googleMessage.style.display = 'block';
                   googleMessage.textContent = A.errorText(err, 'No fue posible iniciar sesión con Google.');
                 }
@@ -483,16 +552,19 @@
     document.getElementById('loginForm').onsubmit = async function (e) {
       e.preventDefault(); var m = document.getElementById('loginMessage'); var btn = document.getElementById('loginBtn'); var email = document.getElementById('loginEmail').value.trim().toLowerCase();
       if (!A.isInstitutionalEmail(email)) { m.style.display = 'block'; m.textContent = 'Usa tu correo institucional @' + A.INSTITUTIONAL_DOMAIN + '.'; return; }
+      A.backendIssue = null;
       m.style.display = 'none'; btn.disabled = true; btn.textContent = 'Ingresando…';
       try {
         var result = await A.sb.auth.signInWithPassword({ email: email, password: document.getElementById('loginPass').value });
         if (result.error) throw result.error;
         A.session = result.data.session;
-        await A.refresh();
+        try { await A.refresh(); }
+        catch (accessError) { A.backendIssue = accessError; throw accessError; }
         location.hash = '#/';
         w.AulaRender();
       } catch (err) {
-        m.style.display = 'block'; m.textContent = A.errorText(err, 'No fue posible iniciar sesión.');
+        if (A.backendIssue && A.session) A.accessErrorView(A.backendIssue);
+        else { m.style.display = 'block'; m.textContent = A.errorText(err, 'No fue posible iniciar sesión.'); }
       } finally { btn.disabled = false; btn.textContent = 'Ingresar con contraseña'; }
     };
   };
@@ -539,16 +611,16 @@
       try {
         await A.refresh();
       } catch (err) {
-        await A.sb.auth.signOut({ scope: 'local' });
-        A.session = null;
+        // No expulsar al usuario por un error del backend; permitir reintento seguro.
+        A.backendIssue = err;
         A.profile = null;
-        throw err;
       }
     }
 
     A.sb.auth.onAuthStateChange(function (event, session) {
       A.session = session;
       if (event === 'SIGNED_OUT') {
+        A.backendIssue = null;
         A.profile = null;
         A.hydrate({});
         if (w.AulaRender) w.AulaRender();

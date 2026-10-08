@@ -20,7 +20,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Frontend regression tests
-        run: node tests/verify-municipal.mjs
+        run: |
+          node tests/verify-municipal.mjs
+          node tests/auth-regression.mjs
       - name: Prepare only public files
         run: |
           mkdir -p publish

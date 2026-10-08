@@ -33,3 +33,5 @@ jobs:
           node-version: '24'
       - name: Validate municipal app contracts and syntax
         run: node tests/verify-municipal.mjs
+      - name: Validate real auth recovery behavior
+        run: node tests/auth-regression.mjs
