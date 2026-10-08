@@ -390,7 +390,16 @@
         }catch(err){A.ui.practice[id]={error:A.errorText(err),nextBlock:nextBlock};}
         A.courseView(id);
       } else if(nextBlock){A.ui.selectedBlock[id]=nextBlock;A.courseView(id);}
-      else {A.courseView(id);}
+      else {
+        // Ultimo bloque: evitar quedarse en el mismo contenido o repetir el examen.
+        // El servidor sigue siendo la autoridad para calificar y certificar.
+        var allRequiredComplete=required.every(function(x){return done.indexOf(x.block.id)>=0;});
+        if(allRequiredComplete && (course.questions||[]).length) {
+          A.ui.examCourse=id;
+          A.ui.lastExam=null;
+        }
+        A.courseView(id);
+      }
     }
 
     var previous=document.getElementById('previousContent');if(previous)previous.onclick=function(){if(currentIndex>0){A.ui.examCourse=null;A.ui.selectedBlock[id]=flat[currentIndex-1].block.id;A.courseView(id);}};
@@ -401,7 +410,7 @@
     var retryPractice=document.getElementById('retryPractice');if(retryPractice)retryPractice.onclick=async function(){var p=A.ui.practice[id];A.ui.practice[id]={loading:true,nextBlock:p.nextBlock};A.courseView(id);try{var q=await A.rpc('aula_get_practice_question',{p_course_id:id,p_seed:String(Date.now())});A.ui.practice[id]={question:q,checked:false,selected:null,correct:false,nextBlock:p.nextBlock};}catch(err){A.ui.practice[id]={error:A.errorText(err),nextBlock:p.nextBlock};}A.courseView(id);};
     var skipPractice=document.getElementById('skipPractice');if(skipPractice)skipPractice.onclick=function(){var p=A.ui.practice[id];if(p&&p.nextBlock){A.ui.selectedBlock[id]=p.nextBlock;delete A.ui.practice[id];A.courseView(id);}};
 
-    function openExam(){if(!examUnlocked)return;setCourseOutline(false);A.ui.examCourse=id;A.ui.lastExam=null;A.courseView(id);}
+    function openExam(){if(!examUnlocked)return;setCourseOutline(false);if(A.ui.practice)delete A.ui.practice[id];A.ui.examCourse=id;A.ui.lastExam=null;A.courseView(id);}
     var launch=document.getElementById('launchExam');if(launch)launch.onclick=openExam;
     var outlineExam=document.getElementById('outlineExam');if(outlineExam)outlineExam.onclick=openExam;
 
